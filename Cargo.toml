@@ -11,6 +11,38 @@ documentation = "https://docs.rs/docx-handlebars"
 keywords = ["docx", "handlebars", "template", "wasm", "office"]
 categories = ["template-engine", "text-processing", "wasm"]
 readme = "README.md"
+exclude = [
+    # 构建产物和 WASM 包
+    "pkg/",
+    "pkg-bundler/", 
+    "pkg-node/",
+    "target/",
+    
+    # 测试目录和文件
+    "jsr_test/",
+    "npm_test/",
+    "examples/*.docx",
+    "**/*.docx",
+    
+    # 构建脚本和配置文件
+    "build.bat",
+    "build.sh", 
+    "Makefile",
+    "deno.json",
+    "jsr.json",
+    "package.json",
+    "mod.ts",
+    "types.d.ts",
+    
+    # Python 测试文件
+    "*.py",
+    "test_*.js",
+    
+    # 其他不必要的文件
+    "Cargo.toml.extra",
+    "TEST_STATUS.md",
+    "RELEASE_SUMMARY.md",
+]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
