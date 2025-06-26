@@ -11,7 +11,7 @@
 
 ### ✅ npm (Node.js/JavaScript)
 - **包名**: `docx-handlebars`
-- **版本**: `0.1.3`
+- **版本**: `0.1.4`
 - **链接**: https://www.npmjs.com/package/docx-handlebars
 - **安装**: `npm install docx-handlebars`
 

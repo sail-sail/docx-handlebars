@@ -150,81 +150,57 @@ impl TemplateEngine {
     }
 
     /// 将渲染后的文本重新分配到文档的段落结构中
-    fn redistribute_rendered_text(&self, xml_content: &str, rendered_text: &str) -> Result<String> {
+    fn redistribute_rendered_text(&self, _xml_content: &str, rendered_text: &str) -> Result<String> {
         use quick_xml::Writer;
         use std::io::Cursor;
+        use std::io::Write;
         
+        // 为每行文本创建段落
+        let text_lines: Vec<&str> = rendered_text.lines().collect();
         let mut result: Vec<u8> = Vec::new();
-        let mut reader = Reader::from_str(xml_content);
         let mut writer = Writer::new(Cursor::new(&mut result));
         
-        let mut buf = Vec::new();
-        let mut in_paragraph = false;
-        let text_lines: Vec<&str> = rendered_text.lines().collect();
-        let mut current_line_index = 0;
-        let mut in_text_element = false;
-        let mut paragraph_has_content = false;
-        let mut _paragraph_index = 0;
+        // 写入文档开始部分
+        let doc_start = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:body>"#;
+        writer.get_mut().write_all(doc_start.as_bytes())?;
         
-        loop {
-            match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(ref e)) => {
-                    if e.name().as_ref() == b"w:p" {
-                        in_paragraph = true;
-                        paragraph_has_content = false;
-                        _paragraph_index += 1;
-                    } else if e.name().as_ref() == b"w:t" && in_paragraph {
-                        in_text_element = true;
-                    }
-                    writer.write_event(Event::Start(e.clone()))?;
-                }
-                Ok(Event::Text(ref e)) => {
-                    if in_text_element && in_paragraph {
-                        // 只在第一个文本元素中写入对应行的内容
-                        if !paragraph_has_content {
-                            if current_line_index < text_lines.len() {
-                                let line_text = text_lines[current_line_index];
-                                
-                                // 对于空行，分配一个空字符串
-                                if line_text.trim().is_empty() {
-                                    let text_event = quick_xml::events::BytesText::new("");
-                                    writer.write_event(Event::Text(text_event))?;
-                                    current_line_index += 1;
-                                    paragraph_has_content = true;
-                                } else {
-                                    let text_event = quick_xml::events::BytesText::new(line_text);
-                                    writer.write_event(Event::Text(text_event))?;
-                                    current_line_index += 1;
-                                    paragraph_has_content = true;
-                                }
-                            } else {
-                                // 没有更多文本行，输出空字符串
-                                let text_event = quick_xml::events::BytesText::new("");
-                                writer.write_event(Event::Text(text_event))?;
-                                paragraph_has_content = true;
-                            }
-                        }
-                        // 如果这个段落已经有内容了，跳过后续的文本节点
-                    } else {
-                        writer.write_event(Event::Text(e.clone()))?;
-                    }
-                }
-                Ok(Event::End(ref e)) => {
-                    if e.name().as_ref() == b"w:p" {
-                        in_paragraph = false;
-                    } else if e.name().as_ref() == b"w:t" && in_paragraph {
-                        in_text_element = false;
-                    }
-                    writer.write_event(Event::End(e.clone()))?;
-                }
-                Ok(Event::Eof) => break,
-                Ok(event) => {
-                    writer.write_event(event)?;
-                }
-                Err(e) => return Err(DocxHandlebarsError::Xml(e)),
+        // 为每行文本创建段落
+        for line in text_lines {
+            if line.trim().is_empty() {
+                // 空行创建空段落
+                let empty_para = r#"<w:p>
+  <w:pPr>
+    <w:rPr>
+      <w:rFonts w:ascii="宋体" w:hAnsi="宋体"/>
+    </w:rPr>
+  </w:pPr>
+</w:p>"#;
+                writer.get_mut().write_all(empty_para.as_bytes())?;
+            } else {
+                // 有内容的行
+                let para_content = format!(r#"<w:p>
+  <w:pPr>
+    <w:rPr>
+      <w:rFonts w:ascii="宋体" w:hAnsi="宋体"/>
+    </w:rPr>
+  </w:pPr>
+  <w:r>
+    <w:rPr>
+      <w:rFonts w:ascii="宋体" w:hAnsi="宋体"/>
+    </w:rPr>
+    <w:t>{}</w:t>
+  </w:r>
+</w:p>"#, line);
+                writer.get_mut().write_all(para_content.as_bytes())?;
             }
-            buf.clear();
         }
+        
+        // 写入文档结束部分
+        let doc_end = r#"</w:body>
+</w:document>"#;
+        writer.get_mut().write_all(doc_end.as_bytes())?;
         
         String::from_utf8(result).map_err(|e| DocxHandlebarsError::Custom(format!("UTF-8 转换错误: {}", e)))
     }

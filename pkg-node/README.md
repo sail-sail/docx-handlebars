@@ -264,3 +264,52 @@ deno publish
 - 初始版本
 - 基本的 DOCX 模板处理功能
 - 支持多平台部署
+
+## 测试
+
+### 浏览器兼容性测试
+
+本项目提供了完整的浏览器兼容性测试套件，确保 npm 包在各种浏览器环境中正常工作：
+
+```bash
+# 进入测试目录
+cd npm_test
+
+# 启动测试服务器
+node server.js
+
+# 在浏览器中访问
+# http://localhost:8080/npm_test/browser_test_npm.html
+```
+
+测试功能包括：
+- ✅ 包加载测试（多种构建版本）
+- ✅ WASM 模块初始化
+- ✅ 基础功能验证
+- ✅ 实际文件处理测试
+- ✅ 文件下载功能
+
+支持的构建版本：
+- `pkg/` - Web 目标，适用于浏览器
+- `pkg-node/` - Node.js 目标，适用于服务端
+- `pkg-bundler/` - Bundler 目标，适用于打包工具
+
+### JSR 包测试
+
+```bash
+# JSR 包功能测试
+cd jsr_test
+deno run --allow-net --allow-read --allow-write test.ts
+
+# JSR 包综合测试
+deno run --allow-net --allow-read --allow-write comprehensive_test.ts
+```
+
+### npm 包测试
+
+```bash
+# Node.js 环境测试
+cd npm_test
+npm install
+node test.js
+```

@@ -1,10 +1,10 @@
 {
   "name": "docx-handlebars",
   "collaborators": [
-    "Your Name <your.email@example.com>"
+    "sail-sail <151263555@qq.com>"
   ],
   "description": "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
