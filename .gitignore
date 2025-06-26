@@ -1,6 +1,5 @@
 # Build artifacts
 /target
-/pkg-node
 /pkg-bundler
 
 # Node.js

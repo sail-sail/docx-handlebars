@@ -1,0 +1,9 @@
+{
+  "name": "jsr-test",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Test JSR package",
+  "scripts": {
+    "test": "deno run --allow-net --allow-read test.ts"
+  }
+}

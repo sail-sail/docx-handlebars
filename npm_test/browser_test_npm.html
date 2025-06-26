@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>docx-handlebars NPM Browser Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .test-result {
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .file-input {
+            margin: 15px 0;
+        }
+        .file-input label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="file"] {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        #output {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .badge-success { background: #28a745; color: white; }
+        .badge-error { background: #dc3545; color: white; }
+        .badge-pending { background: #ffc107; color: black; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 docx-handlebars NPM Browser Test</h1>
+        <p style="text-align: center; color: #666; font-size: 18px;">
+            测试 npm 包在浏览器环境中的兼容性
+        </p>
+        
+        <div class="test-section">
+            <h3>📦 包加载测试 <span id="load-status" class="status-badge badge-pending">待测试</span></h3>
+            <p>测试从 node_modules 加载 docx-handlebars 包</p>
+            <button onclick="testPackageLoad()">开始加载测试</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 基础功能测试 <span id="basic-status" class="status-badge badge-pending">待测试</span></h3>
+            <p>测试 DocxHandlebars 类的基本功能</p>
+            <button onclick="testBasicFunctionality()" id="basic-test-btn" disabled>基础功能测试</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📄 文件处理测试 <span id="file-status" class="status-badge badge-pending">待测试</span></h3>
+            <div class="file-input">
+                <label for="template-file">选择 DOCX 模板文件:</label>
+                <input type="file" id="template-file" accept=".docx">
+            </div>
+            
+            <div class="file-input">
+                <label for="test-data">测试数据 (JSON 格式):</label>
+                <textarea id="test-data" rows="6" placeholder="输入 JSON 数据...">
+{
+  "name": "张三",
+  "company": "ABC公司",
+  "position": "软件工程师"
+}
+                </textarea>
+            </div>
+            
+            <button onclick="testFileProcessing()" id="file-test-btn" disabled>文件处理测试</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 测试结果</h3>
+            <button onclick="clearOutput()">清空输出</button>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        let DocxHandlebars = null;
+        let isWasmReady = false;
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            document.getElementById('output').appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function updateStatus(elementId, status) {
+            const element = document.getElementById(elementId);
+            element.className = `status-badge badge-${status}`;
+            element.textContent = status === 'success' ? '✓ 成功' : 
+                                 status === 'error' ? '✗ 失败' : '⏳ 测试中';
+        }
+        
+        window.testPackageLoad = async function() {
+            updateStatus('load-status', 'pending');
+            addResult('🔄 开始包加载测试...', 'info');
+            
+            try {
+                addResult('📦 尝试从 node_modules 加载包...', 'info');
+                
+                // 方法1: 尝试直接导入
+                try {
+                    const pkg = await import('./node_modules/docx-handlebars/pkg-node/docx_handlebars.js');
+                    DocxHandlebars = pkg.DocxHandlebars;
+                    addResult('✓ 成功加载 Node.js 版本', 'success');
+                } catch (nodeError) {
+                    addResult(`⚠ Node.js 版本加载失败: ${nodeError.message}`, 'warning');
+                    
+                    // 方法2: 尝试 bundler 版本
+                    try {
+                        const bundlerPkg = await import('../pkg-bundler/docx_handlebars.js');
+                        DocxHandlebars = bundlerPkg.DocxHandlebars;
+                        if (bundlerPkg.default) {
+                            await bundlerPkg.default();
+                        }
+                        addResult('✓ 成功加载 Bundler 版本', 'success');
+                    } catch (bundlerError) {
+                        addResult(`⚠ Bundler 版本加载失败: ${bundlerError.message}`, 'warning');
+                        
+                        // 方法3: 尝试 web 版本
+                        try {
+                            const webPkg = await import('../pkg/docx_handlebars.js');
+                            DocxHandlebars = webPkg.DocxHandlebars;
+                            if (webPkg.default) {
+                                await webPkg.default();
+                            }
+                            addResult('✓ 成功加载 Web 版本', 'success');
+                        } catch (webError) {
+                            throw new Error(`所有版本都加载失败: ${webError.message}`);
+                        }
+                    }
+                }
+                
+                if (DocxHandlebars) {
+                    isWasmReady = true;
+                    updateStatus('load-status', 'success');
+                    document.getElementById('basic-test-btn').disabled = false;
+                    document.getElementById('file-test-btn').disabled = false;
+                    addResult('🎉 包加载成功！WASM 模块已就绪', 'success');
+                } else {
+                    throw new Error('DocxHandlebars 类未找到');
+                }
+                
+            } catch (error) {
+                updateStatus('load-status', 'error');
+                addResult(`✗ 包加载失败: ${error.message}`, 'error');
+                addResult('💡 提示: 确保运行在 HTTP 服务器环境中', 'info');
+            }
+        };
+        
+        window.testBasicFunctionality = async function() {
+            if (!isWasmReady) {
+                addResult('⚠ 请先完成包加载测试', 'warning');
+                return;
+            }
+            
+            updateStatus('basic-status', 'pending');
+            addResult('🧪 开始基础功能测试...', 'info');
+            
+            try {
+                // 创建实例
+                const processor = new DocxHandlebars();
+                addResult('✓ DocxHandlebars 实例创建成功', 'success');
+                
+                // 检查方法
+                const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(processor));
+                addResult(`✓ 可用方法 (${methods.length}个): ${methods.join(', ')}`, 'success');
+                
+                // 测试关键方法存在性
+                const requiredMethods = ['load_template', 'render', 'get_template_variables'];
+                for (const method of requiredMethods) {
+                    if (typeof processor[method] === 'function') {
+                        addResult(`✓ ${method} 方法可用`, 'success');
+                    } else {
+                        throw new Error(`缺少必需方法: ${method}`);
+                    }
+                }
+                
+                updateStatus('basic-status', 'success');
+                addResult('🎉 基础功能测试完成！所有方法都可用', 'success');
+                
+            } catch (error) {
+                updateStatus('basic-status', 'error');
+                addResult(`✗ 基础功能测试失败: ${error.message}`, 'error');
+            }
+        };
+        
+        window.testFileProcessing = async function() {
+            if (!isWasmReady) {
+                addResult('⚠ 请先完成包加载测试', 'warning');
+                return;
+            }
+            
+            const fileInput = document.getElementById('template-file');
+            const dataTextarea = document.getElementById('test-data');
+            
+            if (!fileInput.files[0]) {
+                addResult('⚠ 请先选择一个 .docx 模板文件', 'warning');
+                return;
+            }
+            
+            updateStatus('file-status', 'pending');
+            addResult('📄 开始文件处理测试...', 'info');
+            
+            try {
+                // 读取文件
+                const file = fileInput.files[0];
+                addResult(`📁 正在处理文件: ${file.name} (${file.size} 字节)`, 'info');
+                
+                const arrayBuffer = await file.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                addResult(`✓ 文件读取成功`, 'success');
+                
+                // 创建处理器
+                const processor = new DocxHandlebars();
+                
+                // 加载模板
+                processor.load_template(uint8Array);
+                addResult('✓ 模板加载到处理器成功', 'success');
+                
+                // 获取变量
+                try {
+                    const variables = processor.get_template_variables();
+                    addResult(`✓ 模板变量: ${variables}`, 'success');
+                } catch (varError) {
+                    addResult(`⚠ 获取变量失败: ${varError.message}`, 'warning');
+                }
+                
+                // 验证JSON数据
+                const testData = dataTextarea.value.trim();
+                let parsedData;
+                try {
+                    parsedData = JSON.parse(testData);
+                    addResult('✓ JSON 数据格式有效', 'success');
+                } catch (jsonError) {
+                    throw new Error(`JSON 数据格式错误: ${jsonError.message}`);
+                }
+                
+                // 渲染
+                const result = processor.render(testData);
+                addResult(`✓ 模板渲染成功: ${result.length} 字节`, 'success');
+                
+                // 创建下载链接
+                const blob = new Blob([result], { 
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+                });
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.download = `browser_output_${Date.now()}.docx`;
+                downloadLink.textContent = '📥 点击下载渲染结果';
+                downloadLink.style.cssText = 'color: #007bff; text-decoration: none; font-weight: bold;';
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'test-result success';
+                resultDiv.innerHTML = '🎉 文件处理完成！ ';
+                resultDiv.appendChild(downloadLink);
+                document.getElementById('output').appendChild(resultDiv);
+                
+                downloadLink.addEventListener('click', () => {
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                });
+                
+                updateStatus('file-status', 'success');
+                addResult('✅ 文件处理测试完成！', 'success');
+                
+            } catch (error) {
+                updateStatus('file-status', 'error');
+                addResult(`✗ 文件处理测试失败: ${error.message}`, 'error');
+            }
+        };
+        
+        window.clearOutput = function() {
+            document.getElementById('output').innerHTML = '';
+        };
+        
+        // 页面加载完成后的初始化
+        window.addEventListener('load', () => {
+            addResult('🌐 浏览器环境初始化完成', 'info');
+            addResult('💡 点击"开始加载测试"来测试 npm 包的浏览器兼容性', 'info');
+        });
+    </script>
+</body>
+</html>
