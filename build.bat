@@ -26,20 +26,11 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo.
-echo Building WASM for bundler...
-wasm-pack build --target bundler --out-dir pkg-bundler
-if %ERRORLEVEL% neq 0 (
-    echo WASM bundler build failed!
-    exit /b 1
-)
-
-echo.
 echo All builds completed successfully!
 echo.
 echo Output directories:
 echo   - Rust: target/release/
-echo   - Web: pkg/
+echo   - Web/Browser: pkg/ (supports both web and bundlers)
 echo   - Node.js: pkg-node/
-echo   - Bundler: pkg-bundler/
 echo.
 echo Ready for publishing!

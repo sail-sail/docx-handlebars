@@ -1,0 +1,5 @@
+# Allow specific files for JSR publishing
+!docx_handlebars.js
+!docx_handlebars.d.ts
+!docx_handlebars_bg.wasm
+!docx_handlebars_bg.wasm.d.ts
