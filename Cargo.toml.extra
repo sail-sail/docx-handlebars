@@ -1,0 +1,44 @@
+[workspace]
+
+[package]
+# Use the Cargo.toml for complete package information
+
+[badges]
+github = { repository = "sail-sail/docx-handlebars", workflow = "CI" }
+maintenance = { status = "actively-developed" }
+
+# Minimum supported Rust version
+rust-version = "1.70"
+
+# Build configuration
+[profile.release]
+lto = true
+opt-level = "s"
+panic = "abort"
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+
+# Development profile for faster builds
+[profile.dev]
+opt-level = 0
+debug = true
+panic = "unwind"
+
+# Profile for WASM builds
+[profile.wasm-release]
+inherits = "release"
+lto = true
+opt-level = "z"  # Optimize for size
+panic = "abort"
+
+# Test configuration
+[profile.test]
+opt-level = 0
+debug = true
+
+# Benchmark configuration  
+[profile.bench]
+opt-level = 3
+debug = false

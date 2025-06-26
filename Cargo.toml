@@ -1,0 +1,54 @@
+[package]
+name = "docx-handlebars"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/sail-sail/docx-handlebars"
+homepage = "https://github.com/sail-sail/docx-handlebars"
+documentation = "https://docs.rs/docx-handlebars"
+keywords = ["docx", "handlebars", "template", "wasm", "office"]
+categories = ["template-engine", "text-processing", "wasm"]
+readme = "README.md"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Core dependencies
+handlebars = "6.3.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+zip = { version = "4.2.0", default-features = false, features = ["deflate"] }
+quick-xml = "0.37.5"
+thiserror = "2.0.12"
+regex = "1.10"
+
+# WASM dependencies
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+console_error_panic_hook = { version = "0.1.7", optional = true }
+
+# Web API dependencies
+web-sys = { version = "0.3.77", features = [
+  "console",
+  "File",
+  "FileReader",
+  "Blob",
+] }
+
+# Optional dependencies for different features
+# getrandom = { version = "0.3.3", features = ["wasm_js"], default-features = false }
+# bzip2 = { version = "0.6.0", optional = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[features]
+default = ["console_error_panic_hook"]
+# bzip2-support = ["bzip2"]
+
+# Build configuration for WASM
+[package.metadata.wasm-pack.profile.release]
+wee-alloc = false

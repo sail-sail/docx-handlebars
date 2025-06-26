@@ -1,0 +1,16 @@
+{
+  "name": "@sail/docx-handlebars",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": "./mod.ts",
+  "publish": {
+    "exclude": [
+      "target/",
+      "pkg/",
+      "pkg-node/",
+      "pkg-bundler/",
+      "node_modules/",
+      ".git/"
+    ]
+  }
+}
