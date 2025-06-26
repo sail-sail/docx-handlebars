@@ -23,6 +23,13 @@
 - **功能**: 包加载、WASM 初始化、文件处理、下载
 - **文件**: `npm_test/browser_test_npm.html`
 
+### 4. crates.io 发布测试 ✅
+- **包名**: `docx-handlebars`
+- **版本**: 0.1.0
+- **状态**: ✅ 发布成功
+- **测试**: ✅ 完全通过
+- **位置**: `examples/rust_example.rs`
+
 ## 📊 测试覆盖率
 
 | 平台/环境 | 状态 | 测试文件 | 说明 |
@@ -57,6 +64,17 @@ import init, { DocxHandlebars } from './pkg/docx_handlebars.js';
 await init();
 const processor = new DocxHandlebars();
 </script>
+```
+
+### crates.io (Rust)
+```toml
+[dependencies]
+docx-handlebars = "0.1.0"
+```
+
+```rust
+use docx_handlebars::DocxHandlebars;
+let mut processor = DocxHandlebars::new();
 ```
 
 ## 🎯 测试重点
