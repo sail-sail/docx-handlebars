@@ -6,11 +6,20 @@
   "publish": {
     "exclude": [
       "target/",
-      "pkg/",
       "pkg-node/",
       "pkg-bundler/",
       "node_modules/",
-      ".git/"
+      ".git/",
+      "build.bat",
+      "build.sh",
+      "Cargo.lock",
+      "Cargo.toml",
+      "Cargo.toml.extra",
+      "Makefile",
+      "*.py",
+      "examples/",
+      "tests/",
+      "src/"
     ]
   }
 }

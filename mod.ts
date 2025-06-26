@@ -3,21 +3,27 @@
  * 
  * @example
  * ```typescript
- * import { DocxHandlebars } from "https://deno.land/x/docx_handlebars/mod.ts";
+ * import { DocxHandlebars, init } from "https://deno.land/x/docx_handlebars/mod.ts";
+ * 
+ * // Initialize WASM module
+ * await init();
  * 
  * const processor = new DocxHandlebars();
  * const templateBytes = await Deno.readFile("template.docx");
- * await processor.loadTemplate(templateBytes);
+ * processor.load_template(templateBytes);
  * 
  * const data = { name: "张三", company: "ABC公司" };
- * const result = await processor.render(data);
+ * const result = processor.render(JSON.stringify(data));
  * 
  * await Deno.writeFile("output.docx", result);
  * ```
  */
 
-// Web compatible WASM loader for Deno
-export * from "./pkg/docx_handlebars.js";
+// Import the WASM module and its types
+import init, { DocxHandlebars } from "./pkg/docx_handlebars.js";
+
+// Re-export the main class and init function
+export { DocxHandlebars, init };
 
 /**
  * Deno-specific utility functions
