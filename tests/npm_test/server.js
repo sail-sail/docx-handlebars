@@ -1,6 +1,6 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const port = 8080;
 const projectRoot = path.join(__dirname, '..');
@@ -30,7 +30,7 @@ const server = http.createServer((req, res) => {
     return;
   }
   
-  let filePath = req.url === '/' ? '/npm_test/browser_test_npm.html' : req.url;
+  let filePath = req.url === '/' ? '/tests/npm_test/browser_test_npm.html' : req.url;
   filePath = path.join(projectRoot, filePath);
   
   // Security check
@@ -61,7 +61,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, () => {
   console.log(`🚀 Server running at http://localhost:${port}`);
-  console.log(`📄 Browser test: http://localhost:${port}/npm_test/browser_test_npm.html`);
+  console.log(`📄 Browser test: http://localhost:${port}/tests/npm_test/browser_test_npm.html`);
   console.log(`📁 Project root: ${projectRoot}`);
 });
 

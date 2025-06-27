@@ -4,7 +4,7 @@ version = "0.1.4"
 edition = "2021"
 authors = ["sail-sail <151263555@qq.com>"]
 description = "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 repository = "https://github.com/sail-sail/docx-handlebars"
 homepage = "https://github.com/sail-sail/docx-handlebars"
 documentation = "https://docs.rs/docx-handlebars"
@@ -13,14 +13,13 @@ categories = ["template-engine", "text-processing", "wasm"]
 readme = "README.md"
 exclude = [
     # 构建产物和 WASM 包
-    "pkg/",
-    "pkg-bundler/", 
-    "pkg-node/",
+    "pkg-npm/",
+    "pkg-jsr/",
     "target/",
     
     # 测试目录和文件
-    "jsr_test/",
-    "npm_test/",
+    "tests/jsr_test/",
+    "tests/npm_test/",
     "examples/*.docx",
     "**/*.docx",
     
@@ -34,14 +33,11 @@ exclude = [
     "mod.ts",
     "types.d.ts",
     
-    # Python 测试文件
-    "*.py",
-    "test_*.js",
+    # Python 调试工具
+    "tools/",
     
-    # 其他不必要的文件
-    "Cargo.toml.extra",
-    "TEST_STATUS.md",
-    "RELEASE_SUMMARY.md",
+    # 发版文档
+    "releases/",
 ]
 
 [lib]
@@ -70,16 +66,11 @@ web-sys = { version = "0.3.77", features = [
   "Blob",
 ] }
 
-# Optional dependencies for different features
-# getrandom = { version = "0.3.3", features = ["wasm_js"], default-features = false }
-# bzip2 = { version = "0.6.0", optional = true }
-
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 
 [features]
 default = ["console_error_panic_hook"]
-# bzip2-support = ["bzip2"]
 
 # Build configuration for WASM
 [package.metadata.wasm-pack.profile.release]

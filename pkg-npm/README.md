@@ -126,7 +126,7 @@ processTemplate().catch(console.error);
     <a id="downloadLink" style="display:none">下载结果</a>
 
     <script type="module">
-        import init, { DocxHandlebars } from './pkg/docx_handlebars.js';
+        import init, { DocxHandlebars } from './pkg-npm/docx_handlebars.js';
         
         async function initWasm() {
             await init();
@@ -212,6 +212,54 @@ await Deno.writeFile("output.docx", result);
 {{/unless}}
 ```
 
+## 项目结构
+
+```
+docx-handlebars/
+├── src/              # Rust 源代码
+├── examples/         # 使用示例
+├── tests/            # 集成测试
+│   ├── jsr_test/     # JSR 包测试
+│   └── npm_test/     # npm 包测试
+├── tools/            # Python 调试工具
+├── releases/         # 发版说明文档
+├── pkg-npm/          # npm 包构建输出
+└── pkg-jsr/          # JSR 包构建输出
+```
+
+### 调试工具
+
+`tools/` 目录包含用于调试和分析DOCX文件的Python工具：
+
+- `check_template.py` - 检查DOCX文件内容
+- `debug_extract.py` - 调试文本提取过程
+- `debug_lines.py` - 调试渲染后文本的行分布
+- `debug_specific.py` - 特定DOCX文件调试
+- `debug_template.py` - 分析模板文件的段落结构
+
+详细使用说明请参考 `tools/README.md`。
+
+### 发版包目录
+
+`pkg-npm/` 目录包含用于 npm 发版的包：
+- 支持 Node.js 和浏览器环境
+- 使用 web target 构建
+
+`pkg-jsr/` 目录包含用于 JSR 发版的包：
+- 支持 Deno 和 Node.js 环境  
+- 包含 JSR 特定的配置文件
+
+### 发版文档
+
+`releases/` 目录包含项目的发版说明和版本历史：
+
+- `FINAL_RELEASE_SUMMARY_0.1.4.md` - v0.1.4 最终发版总结
+- `JSR_RELEASE_0.1.4_SUMMARY.md` - JSR 平台发版说明
+- `MULTI_PLATFORM_RELEASE_0.1.4.md` - 多平台发版详情
+- `RELEASE_SUMMARY.md` - 通用发版总结
+
+详细信息请参考 `releases/README.md`。
+
 ## 开发
 
 ### 前置条件
@@ -223,14 +271,16 @@ await Deno.writeFile("output.docx", result);
 ### 构建
 
 ```bash
+# 构建所有包（推荐）
+npm run build
+
+# 或者分别构建：
 # 构建 Rust 库
 cargo build --release
 
-# 构建 WASM 包
-wasm-pack build --target web --out-dir pkg
-
-# 构建 npm 包
-wasm-pack build --target nodejs --out-dir pkg-node
+# 单独构建各平台包
+npm run build:npm  # 构建 npm 包
+npm run build:jsr  # 构建 JSR 包
 
 # 运行测试
 cargo test
@@ -240,19 +290,23 @@ wasm-pack test --headless --firefox
 ### 发布
 
 ```bash
+# 1. 首先构建所有包
+npm run build
+
+# 2. 发布到各平台
 # 发布到 crates.io
 cargo publish
 
 # 发布到 npm
-cd pkg && npm publish
+cd pkg-npm && npm publish
 
 # 发布到 JSR
-deno publish
+cd pkg-jsr && deno publish
 ```
 
 ## 许可证
 
-本项目采用 MIT 或 Apache-2.0 双重许可证。
+本项目采用 MIT 许可证。
 
 ## 贡献
 
@@ -273,13 +327,13 @@ deno publish
 
 ```bash
 # 进入测试目录
-cd npm_test
+cd tests/npm_test
 
 # 启动测试服务器
 node server.js
 
 # 在浏览器中访问
-# http://localhost:8080/npm_test/browser_test_npm.html
+# http://localhost:8080/tests/npm_test/browser_test_npm.html
 ```
 
 测试功能包括：
@@ -290,15 +344,14 @@ node server.js
 - ✅ 文件下载功能
 
 支持的构建版本：
-- `pkg/` - Web 目标，适用于浏览器
-- `pkg-node/` - Node.js 目标，适用于服务端
-- `pkg-bundler/` - Bundler 目标，适用于打包工具
+- `pkg-npm/` - npm 包，同时支持 Node.js 和浏览器环境
+- `pkg-jsr/` - JSR 包，同时支持 Deno 和 Node.js 环境
 
 ### JSR 包测试
 
 ```bash
 # JSR 包功能测试
-cd jsr_test
+cd tests/jsr_test
 deno run --allow-net --allow-read --allow-write test.ts
 
 # JSR 包综合测试
@@ -309,7 +362,7 @@ deno run --allow-net --allow-read --allow-write comprehensive_test.ts
 
 ```bash
 # Node.js 环境测试
-cd npm_test
+cd tests/npm_test
 npm install
 node test.js
 ```

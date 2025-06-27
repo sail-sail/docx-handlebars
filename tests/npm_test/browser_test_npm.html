@@ -194,34 +194,22 @@
                 
                 // 方法1: 尝试直接导入
                 try {
-                    const pkg = await import('./node_modules/docx-handlebars/pkg-node/docx_handlebars.js');
+                    const pkg = await import('./node_modules/docx-handlebars/pkg-npm/docx_handlebars.js');
                     DocxHandlebars = pkg.DocxHandlebars;
-                    addResult('✓ 成功加载 Node.js 版本', 'success');
+                    addResult('✓ 成功加载 npm 版本', 'success');
                 } catch (nodeError) {
-                    addResult(`⚠ Node.js 版本加载失败: ${nodeError.message}`, 'warning');
+                    addResult(`⚠ npm 版本加载失败: ${nodeError.message}`, 'warning');
                     
-                    // 方法2: 尝试 bundler 版本
+                    // 方法2: 尝试 web 版本
                     try {
-                        const bundlerPkg = await import('../pkg-bundler/docx_handlebars.js');
-                        DocxHandlebars = bundlerPkg.DocxHandlebars;
-                        if (bundlerPkg.default) {
-                            await bundlerPkg.default();
+                        const webPkg = await import('../../pkg-npm/docx_handlebars.js');
+                        DocxHandlebars = webPkg.DocxHandlebars;
+                        if (webPkg.default) {
+                            await webPkg.default();
                         }
-                        addResult('✓ 成功加载 Bundler 版本', 'success');
-                    } catch (bundlerError) {
-                        addResult(`⚠ Bundler 版本加载失败: ${bundlerError.message}`, 'warning');
-                        
-                        // 方法3: 尝试 web 版本
-                        try {
-                            const webPkg = await import('../pkg/docx_handlebars.js');
-                            DocxHandlebars = webPkg.DocxHandlebars;
-                            if (webPkg.default) {
-                                await webPkg.default();
-                            }
-                            addResult('✓ 成功加载 Web 版本', 'success');
-                        } catch (webError) {
-                            throw new Error(`所有版本都加载失败: ${webError.message}`);
-                        }
+                        addResult('✓ 成功加载 Web 版本', 'success');
+                    } catch (webError) {
+                        throw new Error(`所有版本都加载失败: ${webError.message}`);
                     }
                 }
                 

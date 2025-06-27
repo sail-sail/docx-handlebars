@@ -96,7 +96,6 @@ import { DocxHandlebars, init } from "@sail/docx-handlebars";
 | npm | docx-handlebars | 0.1.4 | ✅ 已发布 | Node.js |
 | JSR | @sail/docx-handlebars | 0.1.4 | ✅ 已发布 | Deno, Node.js |
 | pkg | docx-handlebars | 0.1.4 | 🔄 待发布 | Web/Browser |
-| pkg-bundler | docx-handlebars | 0.1.4 | 🔄 待发布 | Bundler |
 
 ## 🔄 下一步
 
@@ -108,15 +107,12 @@ import { DocxHandlebars, init } from "@sail/docx-handlebars";
    cd pkg && npm publish
    ```
 
-2. **Bundler 版本 (pkg-bundler)**:
-   ```bash
-   cd pkg-bundler && npm publish
-   ```
+> **注：** Bundler 版本 (pkg-bundler) 已在后续版本中移除，因为 npm 包已经支持浏览器环境。
 
 ### 测试验证
 - JSR 包可以立即在 Deno 项目中使用
 - 通过 JSR 也可以在 Node.js 项目中使用
-- 建议运行 jsr_test/ 目录下的测试验证功能
+- 建议运行 tests/jsr_test/ 目录下的测试验证功能
 
 ## ✨ 用户指南
 

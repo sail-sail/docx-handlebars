@@ -2,21 +2,20 @@
   "name": "docx-handlebars",
   "version": "0.1.4",
   "description": "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers",
-  "main": "pkg-node/docx_handlebars.js",
-  "types": "pkg-node/docx_handlebars.d.ts",
+  "main": "pkg-npm/docx_handlebars.js",
+  "types": "pkg-npm/docx_handlebars.d.ts",
   "files": [
-    "pkg-node"
+    "pkg-npm"
   ],
   "scripts": {
-    "build:web": "wasm-pack build --target web --out-dir pkg",
-    "build:node": "wasm-pack build --target nodejs --out-dir pkg-node",
-    "build:bundler": "wasm-pack build --target bundler --out-dir pkg-bundler",
-    "build": "npm run build:web && npm run build:node && npm run build:bundler",
+    "build": "node build.js",
+    "build:npm": "wasm-pack build --target web --out-dir pkg-npm",
+    "build:jsr": "wasm-pack build --target web --out-dir pkg-jsr",
     "test": "wasm-pack test --headless --firefox",
     "test:node": "wasm-pack test --node",
-    "dev": "wasm-pack build --dev --target web --out-dir pkg",
+    "dev": "wasm-pack build --dev --target web --out-dir pkg-npm",
     "serve": "python -m http.server 8000",
-    "clean": "rimraf pkg pkg-node pkg-bundler target"
+    "clean": "rimraf pkg-npm pkg-jsr target"
   },
   "repository": {
     "type": "git",
@@ -32,7 +31,7 @@
     "webassembly"
   ],
   "author": "Your Name <your.email@example.com>",
-  "license": "MIT OR Apache-2.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/sail-sail/docx-handlebars/issues"
   },

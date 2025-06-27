@@ -3,12 +3,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 // 注意：这个示例需要 WASM 包构建完成后才能运行
-// 运行 `wasm-pack build --target nodejs --out-dir pkg-node` 来构建 Node.js 包
+// 运行 `wasm-pack build --target web --out-dir pkg-npm` 来构建 npm 包
 
 async function nodeExample() {
     try {
         // 导入 WASM 模块
-        const { DocxHandlebars } = require('../pkg-node/docx_handlebars.js');
+        const { DocxHandlebars } = require('../pkg-npm/docx_handlebars.js');
         
         console.log('🚀 Node.js DOCX Handlebars 处理示例\n');
         
@@ -103,7 +103,7 @@ async function nodeExample() {
         
         if (error.message.includes('Cannot resolve module')) {
             console.log('\n💡 提示: 请先构建 Node.js 版本的 WASM 包:');
-            console.log('   wasm-pack build --target nodejs --out-dir pkg-node');
+            console.log('   wasm-pack build --target web --out-dir pkg-npm');
         }
     }
 }
