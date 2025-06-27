@@ -1,6 +1,6 @@
 {
   "name": "docx-handlebars",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers",
   "main": "pkg-npm/docx_handlebars.js",
   "types": "pkg-npm/docx_handlebars.d.ts",
@@ -8,18 +8,21 @@
     "pkg-npm"
   ],
   "scripts": {
-    "build": "node build.js",
+    "build": "node tools/build.js",
     "build:npm": "wasm-pack build --target web --out-dir pkg-npm",
     "build:jsr": "wasm-pack build --target web --out-dir pkg-jsr",
+    "publish:rust": "cargo publish --allow-dirty",
+    "publish:npm": "cd pkg-npm && npm publish",
+    "publish:jsr": "cd pkg-jsr && deno publish --allow-slow-types --allow-dirty",
     "test": "wasm-pack test --headless --firefox",
     "test:node": "wasm-pack test --node",
     "dev": "wasm-pack build --dev --target web --out-dir pkg-npm",
-    "serve": "python -m http.server 8000",
-    "clean": "rimraf pkg-npm pkg-jsr target"
+    "clean": "rimraf pkg-npm pkg-jsr target",
+    "version": "node tools/update_version.js"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/sail-sail/docx-handlebars.git"
+    "url": "git+https://github.com/sail-sail/docx-handlebars.git"
   },
   "keywords": [
     "docx",

@@ -1,12 +1,14 @@
 {
   "name": "docx-handlebars",
-  "author": "sail-sail <151263555@qq.com>",
+  "collaborators": [
+    "sail-sail <151263555@qq.com>"
+  ],
   "description": "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sail-sail/docx-handlebars.git"
+    "url": "https://github.com/sail-sail/docx-handlebars"
   },
   "files": [
     "docx_handlebars_bg.wasm",

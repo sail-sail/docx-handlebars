@@ -32,8 +32,6 @@ output_*.docx
 
 # Editor backup
 *~
-.#*
-#*#
 
 # Rust
 **/*.rs.bk

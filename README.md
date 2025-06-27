@@ -26,9 +26,8 @@
 
 ### Rust
 
-```toml
-[dependencies]
-docx-handlebars = "0.1"
+```bash
+cargo add docx-handlebars
 ```
 
 ### npm
