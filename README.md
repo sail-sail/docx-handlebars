@@ -349,12 +349,9 @@ node server.js
 ### JSR 包测试
 
 ```bash
-# JSR 包功能测试
+# JSR 包综合测试
 cd tests/jsr_test
 deno run --allow-net --allow-read --allow-write test.ts
-
-# JSR 包综合测试
-deno run --allow-net --allow-read --allow-write comprehensive_test.ts
 ```
 
 ### npm 包测试
@@ -363,5 +360,5 @@ deno run --allow-net --allow-read --allow-write comprehensive_test.ts
 # Node.js 环境测试
 cd tests/npm_test
 npm install
-node test.js
+node test.mjs
 ```

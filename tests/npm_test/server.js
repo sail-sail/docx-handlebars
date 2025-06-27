@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const port = 8080;
-const projectRoot = path.join(__dirname, '..');
+const projectRoot = __dirname;
 
 // MIME types
 const mimeTypes = {
@@ -30,8 +30,10 @@ const server = http.createServer((req, res) => {
     return;
   }
   
-  let filePath = req.url === '/' ? '/tests/npm_test/browser_test_npm.html' : req.url;
+  let filePath = req.url === '/' ? '/browser_test_npm.html' : req.url;
   filePath = path.join(projectRoot, filePath);
+  
+  console.log("filePath: ", filePath);
   
   // Security check
   if (!filePath.startsWith(projectRoot)) {
@@ -61,7 +63,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, () => {
   console.log(`🚀 Server running at http://localhost:${port}`);
-  console.log(`📄 Browser test: http://localhost:${port}/tests/npm_test/browser_test_npm.html`);
+  console.log(`📄 Browser test: http://localhost:${port}/browser_test_npm.html`);
   console.log(`📁 Project root: ${projectRoot}`);
 });
 

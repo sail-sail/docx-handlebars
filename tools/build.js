@@ -36,11 +36,41 @@ function ensureDir(dir) {
   }
 }
 
+function addMainFieldToPackageJson(packageJsonPath) {
+  try {
+    if (fs.existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      
+      // 检查是否已经有 main 字段
+      if (!packageJson.main && packageJson.module) {
+        // 在 module 字段前面添加 main 字段
+        const { module, ...rest } = packageJson;
+        const updatedPackageJson = {
+          ...rest,
+          main: module, // 使用相同的文件作为 main 入口
+          module,
+        };
+        
+        fs.writeFileSync(packageJsonPath, JSON.stringify(updatedPackageJson, null, 2) + '\n');
+        console.log(`✓ Added "main" field to ${path.basename(packageJsonPath)}`);
+      } else if (packageJson.main) {
+        console.log(`✓ "main" field already exists in ${path.basename(packageJsonPath)}`);
+      }
+    }
+  } catch (error) {
+    console.error(`❌ Failed to update ${packageJsonPath}:`, error.message);
+  }
+}
+
 // 构建 Rust 库
 runCommand('cargo build --release', 'Building Rust library');
 
 // 构建 npm 包
 runCommand('wasm-pack build --target web --out-dir pkg-npm', 'Building WASM for npm');
+
+// 为 npm 包添加 main 字段以支持 CommonJS
+console.log('\n🔧 Updating npm package.json...');
+addMainFieldToPackageJson('pkg-npm/package.json');
 
 // 构建 JSR 包
 runCommand('wasm-pack build --target web --out-dir pkg-jsr', 'Building JSR package WASM files');

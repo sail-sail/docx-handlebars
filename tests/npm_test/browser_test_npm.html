@@ -148,11 +148,7 @@
             <div class="file-input">
                 <label for="test-data">测试数据 (JSON 格式):</label>
                 <textarea id="test-data" rows="6" placeholder="输入 JSON 数据...">
-{
-  "name": "张三",
-  "company": "ABC公司",
-  "position": "软件工程师"
-}
+{"employee":{"name":"陈小华","department":"产品部","position":"产品经理","hire_date":"2024-02-20","has_bonus":true,"bonus_amount":12000,"email":"chenxiaohua@company.com"},"company":{"name":"创新科技有限公司","address":"上海市浦东新区张江高科技园区","industry":"人工智能"},"projects":[{"name":"AI助手平台","description":"智能对话系统产品设计","status":"已上线","duration":"3个月","team_size":8},{"name":"数据分析工具","description":"用户行为分析平台","status":"开发中","duration":"2个月","team_size":5},{"name":"移动应用重构","description":"用户体验优化项目","status":"规划中","duration":"4个月","team_size":12}],"skills":["产品设计","用户研究","数据分析","项目管理","敏捷开发"],"achievements":["产品用户量增长200%","用户满意度提升至4.8/5.0","获得年度最佳产品奖","主导3次成功的产品迭代"],"performance":{"rating":"优秀","score":92,"goals_achieved":8,"total_goals":10},"metadata":{"report_date":"2025/6/28","quarter":"2024 Q1","version":"v1.0"}}
                 </textarea>
             </div>
             
@@ -194,23 +190,13 @@
                 
                 // 方法1: 尝试直接导入
                 try {
-                    const pkg = await import('./node_modules/docx-handlebars/pkg-npm/docx_handlebars.js');
+                    const pkg = await import('./node_modules/docx-handlebars/docx_handlebars.js');
+                    await pkg["default"]();
                     DocxHandlebars = pkg.DocxHandlebars;
                     addResult('✓ 成功加载 npm 版本', 'success');
                 } catch (nodeError) {
                     addResult(`⚠ npm 版本加载失败: ${nodeError.message}`, 'warning');
-                    
-                    // 方法2: 尝试 web 版本
-                    try {
-                        const webPkg = await import('../../pkg-npm/docx_handlebars.js');
-                        DocxHandlebars = webPkg.DocxHandlebars;
-                        if (webPkg.default) {
-                            await webPkg.default();
-                        }
-                        addResult('✓ 成功加载 Web 版本', 'success');
-                    } catch (webError) {
-                        throw new Error(`所有版本都加载失败: ${webError.message}`);
-                    }
+                    throw nodeError;
                 }
                 
                 if (DocxHandlebars) {

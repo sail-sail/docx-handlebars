@@ -7,25 +7,33 @@
 // 注意：这需要先构建 WASM 包
 // 运行 `wasm-pack build --target web --out-dir pkg` 来构建包
 
-import { DocxHandlebarsUtils } from "../mod.ts";
+import {
+    DocxHandlebars,
+    init as initDocxHandlebars,
+} from "../pkg-jsr/mod.ts";
 
 async function denoExample() {
     console.log("🦕 Deno DOCX Handlebars 处理示例\n");
     
     try {
+        
         // 初始化 WASM 模块
         console.log("⚡ 初始化 WASM 模块...");
-        await DocxHandlebarsUtils.initWasm();
-        
-        // 导入 DocxHandlebars 类
-        const { DocxHandlebars } = await import("../pkg/docx_handlebars.js");
+        await initDocxHandlebars();
         
         // 创建处理器实例
-        const processor = new DocxHandlebars();
+        const docxHandlebars = new DocxHandlebars();
         
         // 检查模板文件是否存在
         const templatePath = "./examples/template.docx";
-        const templateExists = await DocxHandlebarsUtils.fileExists(templatePath);
+        
+        let templateExists = true;
+        
+        try {
+            await Deno.stat(templatePath);
+        } catch (err) {
+            templateExists = false;
+        }
         
         if (!templateExists) {
             console.log("⚠️  模板文件不存在，创建示例说明...\n");
@@ -49,11 +57,11 @@ async function denoExample() {
         
         // 读取模板文件
         console.log("📖 读取模板文件...");
-        const templateBytes = await DocxHandlebarsUtils.readDocxFile(templatePath);
+        const templateBytes = await Deno.readFile(templatePath);
         
         // 加载模板
         console.log("⚙️  加载模板...");
-        processor.load_template(templateBytes);
+        docxHandlebars.load_template(templateBytes);
         
         // 准备数据
         const data = {
@@ -119,23 +127,20 @@ async function denoExample() {
         
         // 提取模板变量
         console.log("\n🔍 提取模板变量...");
-        const variablesJson = processor.get_template_variables();
+        const variablesJson = docxHandlebars.get_template_variables();
         const variables = JSON.parse(variablesJson);
         console.log("发现的模板变量:", variables);
         
         // 渲染模板
         console.log("\n🎨 渲染模板...");
-        const result = processor.render(JSON.stringify(data));
+        const result = docxHandlebars.render(JSON.stringify(data));
         
         // 保存结果
         const outputPath = "./examples/output_deno.docx";
-        await DocxHandlebarsUtils.writeDocxFile(outputPath, result);
+        await Deno.writeFile(outputPath, result);
         
         console.log(`✅ 处理完成！结果已保存到: ${outputPath}`);
         console.log(`📁 文件大小: ${result.length} 字节`);
-        
-        // 额外的实用功能演示
-        await demonstrateUtilities();
         
         console.log("\n🎉 Deno 示例执行完成！");
         
@@ -153,109 +158,7 @@ async function denoExample() {
     }
 }
 
-async function demonstrateUtilities() {
-    console.log("\n🛠️  实用工具演示:");
-    
-    // 文件操作演示
-    const testFiles = [
-        "./examples/template.docx",
-        "./examples/output_deno.docx",
-        "./examples/nonexistent.docx"
-    ];
-    
-    for (const file of testFiles) {
-        const exists = await DocxHandlebarsUtils.fileExists(file);
-        console.log(`📄 ${file}: ${exists ? "✅ 存在" : "❌ 不存在"}`);
-    }
-    
-    // JSON 验证演示
-    const testJsons = [
-        '{"valid": "json"}',
-        '{valid: "json"}', // 无效
-        '{"name": "测试", "value": 123}',
-        'invalid json'
-    ];
-    
-    console.log("\n📝 JSON 验证演示:");
-    testJsons.forEach((json, index) => {
-        try {
-            JSON.parse(json);
-            console.log(`${index + 1}. ✅ 有效 JSON: ${json.slice(0, 30)}...`);
-        } catch {
-            console.log(`${index + 1}. ❌ 无效 JSON: ${json.slice(0, 30)}...`);
-        }
-    });
-}
-
-// Deno 特有的模板数据生成器
-function generateDenoSpecificData() {
-    return {
-        runtime: {
-            name: "Deno",
-            version: "1.40+",
-            features: ["TypeScript", "安全默认", "内置工具", "Web API"]
-        },
-        permissions: {
-            read: true,
-            write: true,
-            net: false,
-            env: false
-        },
-        timestamp: new Date().toISOString(),
-        platform: Deno.build,
-        // memory_usage: `${Math.round(performance.memory?.usedJSHeapSize / 1024 / 1024 || 0)}MB`
-    };
-}
-
-// 错误处理示例
-async function errorHandlingExample() {
-    console.log("\n🚨 错误处理示例:");
-    
-    try {
-        // 故意使用无效的 JSON
-        const processor = new (await import("../pkg/docx_handlebars.js")).DocxHandlebars();
-        processor.render("invalid json");
-    } catch (error) {
-        if (error instanceof Error) {
-            console.log("✅ 成功捕获错误:", error.message);
-        } else {
-            console.log("✅ 成功捕获错误:", error);
-        }
-    }
-    
-    try {
-        // 尝试读取不存在的文件
-        await DocxHandlebarsUtils.readDocxFile("./nonexistent.docx");
-    } catch (error) {
-        if (typeof error === "object" && error !== null && "name" in error) {
-            console.log("✅ 成功捕获文件读取错误:", (error as { name: string }).name);
-        } else {
-            console.log("✅ 成功捕获文件读取错误:", error);
-        }
-    }
-}
-
-// 性能测试示例
-function performanceExample() {
-    console.log("\n⚡ 性能测试示例:");
-    
-    const iterations = 100;
-    const testData = { test: "data", number: 42, array: [1, 2, 3] };
-    
-    const start = performance.now();
-    
-    for (let i = 0; i < iterations; i++) {
-        JSON.stringify(testData);
-        JSON.parse(JSON.stringify(testData));
-    }
-    
-    const end = performance.now();
-    console.log(`⏱️  ${iterations} 次 JSON 序列化/反序列化耗时: ${(end - start).toFixed(2)}ms`);
-}
-
 // 主函数
 if (import.meta.main) {
     await denoExample();
-    await errorHandlingExample();
-    performanceExample();
 }

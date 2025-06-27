@@ -24,11 +24,8 @@ tests/
 ```bash
 cd tests/jsr_test
 
-# 基础功能测试
-deno run --allow-net --allow-read --allow-write test.ts
-
 # 综合功能测试
-deno run --allow-net --allow-read --allow-write comprehensive_test.ts
+deno run --allow-net --allow-read --allow-write test.ts
 ```
 
 **测试内容：**
@@ -45,10 +42,7 @@ cd tests/npm_test
 
 # Node.js 环境测试
 npm install
-node test.js
-
-# 扩展功能测试
-node extended_test.js
+node test.mjs
 
 # 浏览器兼容性测试
 node server.js

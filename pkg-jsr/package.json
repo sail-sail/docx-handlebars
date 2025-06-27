@@ -16,6 +16,7 @@
     "docx_handlebars.d.ts",
     "LICENSE-MIT"
   ],
+  "module": "docx_handlebars.js",
   "homepage": "https://github.com/sail-sail/docx-handlebars",
   "types": "docx_handlebars.d.ts",
   "sideEffects": [
@@ -27,7 +28,5 @@
     "template",
     "wasm",
     "office"
-  ],
-  "main": "docx_handlebars.js",
-  "module": "docx_handlebars.js"
+  ]
 }

@@ -8,7 +8,12 @@ const path = require("node:path");
 async function nodeExample() {
     try {
         // 导入 WASM 模块
-        const { DocxHandlebars } = require('../pkg-npm/docx_handlebars.js');
+        const {
+            default: initDocxHandlebars,
+            DocxHandlebars,
+        } = await import('../pkg-npm');
+        
+        await initDocxHandlebars();
         
         console.log('🚀 Node.js DOCX Handlebars 处理示例\n');
         

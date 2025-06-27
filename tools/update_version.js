@@ -42,7 +42,10 @@ function updateVersion(newVersion) {
         // 5. 更新 pkg-jsr/deno.json
         updatePkgJsrDenoJson(newVersion);
         
-        // 6. 自动更新 Cargo.lock (通过运行 cargo check)
+        // 6. 更新测试文件中的版本号
+        updateTestFiles(newVersion);
+        
+        // 7. 自动更新 Cargo.lock (通过运行 cargo check)
         updateCargoLock();
 
         console.log('✅ 版本号更新完成!');
@@ -52,6 +55,8 @@ function updateVersion(newVersion) {
         console.log('- pkg-npm/package.json');
         console.log('- pkg-jsr/jsr.json');
         console.log('- pkg-jsr/deno.json');
+        console.log('- tests/npm_test/package.json');
+        console.log('- tests/jsr_test/test.ts');
         console.log('\n请运行 npm run build 来重新构建项目');
         
     } catch (error) {
@@ -146,6 +151,37 @@ function updatePkgJsrDenoJson(newVersion) {
     
     fs.writeFileSync(pkgJsrDenoJsonPath, JSON.stringify(denoJson, null, 2) + '\n');
     console.log(`  ✓ pkg-jsr/deno.json: ${oldVersion} → ${newVersion}`);
+}
+
+function updateTestFiles(newVersion) {
+    console.log('更新测试文件中的版本号...');
+    
+    // 更新 tests/npm_test/package.json 中的依赖版本
+    const npmTestPackageJsonPath = path.join(__dirname, '..', 'tests', 'npm_test', 'package.json');
+    if (fs.existsSync(npmTestPackageJsonPath)) {
+        const packageJson = JSON.parse(fs.readFileSync(npmTestPackageJsonPath, 'utf8'));
+        if (packageJson.dependencies && packageJson.dependencies['docx-handlebars']) {
+            const oldVersion = packageJson.dependencies['docx-handlebars'];
+            packageJson.dependencies['docx-handlebars'] = newVersion;
+            fs.writeFileSync(npmTestPackageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+            console.log(`  ✓ tests/npm_test/package.json: ${oldVersion} → ${newVersion}`);
+        }
+    }
+    
+    // 更新 tests/jsr_test/test.ts 中的 JSR 包版本
+    const jsrTestFilePath = path.join(__dirname, '..', 'tests', 'jsr_test', 'test.ts');
+    if (fs.existsSync(jsrTestFilePath)) {
+        let testFileContent = fs.readFileSync(jsrTestFilePath, 'utf8');
+        const jsrImportRegex = /from "jsr:@sail\/docx-handlebars@(\d+\.\d+\.\d+(?:-[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*)?)"/;
+        const match = testFileContent.match(jsrImportRegex);
+        
+        if (match) {
+            const oldVersion = match[1];
+            testFileContent = testFileContent.replace(jsrImportRegex, `from "jsr:@sail/docx-handlebars@${newVersion}"`);
+            fs.writeFileSync(jsrTestFilePath, testFileContent);
+            console.log(`  ✓ tests/jsr_test/test.ts: @${oldVersion} → @${newVersion}`);
+        }
+    }
 }
 
 // 获取命令行参数
