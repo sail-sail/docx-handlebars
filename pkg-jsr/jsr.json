@@ -1,0 +1,18 @@
+{
+  "name": "@sail/docx-handlebars",
+  "version": "0.1.4",
+  "license": "MIT",
+  "exports": "./mod.ts",
+  "publish": {
+    "include": [
+      "mod.ts",
+      "types.d.ts",
+      "docx_handlebars.js",
+      "docx_handlebars.d.ts",
+      "docx_handlebars_bg.wasm",
+      "docx_handlebars_bg.wasm.d.ts",
+      "LICENSE-MIT",
+      "README.md"
+    ]
+  }
+}
