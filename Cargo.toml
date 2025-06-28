@@ -35,9 +35,6 @@ exclude = [
     
     # Python 调试工具
     "tools/",
-    
-    # 发版文档
-    "releases/",
 ]
 
 [lib]
@@ -46,16 +43,16 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 # Core dependencies
 handlebars = "6.3.2"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 zip = { version = "4.2.0", default-features = false, features = ["deflate"] }
 quick-xml = "0.37.5"
 thiserror = "2.0.12"
-regex = "1.10"
+regex = "1.11.1"
 
 # WASM dependencies
-wasm-bindgen = "0.2"
-js-sys = "0.3"
+wasm-bindgen = "0.2.100"
+js-sys = "0.3.77"
 console_error_panic_hook = { version = "0.1.7", optional = true }
 
 # Web API dependencies
@@ -67,10 +64,16 @@ web-sys = { version = "0.3.77", features = [
 ] }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3"
+wasm-bindgen-test = "0.3.50"
 
 [features]
 default = ["console_error_panic_hook"]
+
+[profile.release]
+panic = "abort"
+opt-level = "z"
+lto = true
+codegen-units = 1
 
 # Build configuration for WASM
 [package.metadata.wasm-pack.profile.release]

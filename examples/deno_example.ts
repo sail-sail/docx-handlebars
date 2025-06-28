@@ -5,7 +5,7 @@
  */
 
 // 注意：这需要先构建 WASM 包
-// 运行 `wasm-pack build --target web --out-dir pkg` 来构建包
+// 运行 `npm run build:jsr` 来构建包
 
 import {
     DocxHandlebars,

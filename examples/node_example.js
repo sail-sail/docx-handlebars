@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 // 注意：这个示例需要 WASM 包构建完成后才能运行
-// 运行 `wasm-pack build --target web --out-dir pkg-npm` 来构建 npm 包
+// 运行 `npm run build:npm` 来构建 npm 包
 
 async function nodeExample() {
     try {

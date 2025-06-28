@@ -81,34 +81,68 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### JavaScript/TypeScript (Node.js)
 
 ```javascript
-import { DocxHandlebars } from 'docx-handlebars';
+// ES模块版本 (推荐)
+import init, { DocxHandlebars, initSync } from 'docx-handlebars';
 import fs from 'fs';
+import path from 'path';
 
 async function processTemplate() {
+    // 方法1: 异步初始化 WASM
+    await init();
+    
+    // 方法2: 同步初始化 WASM (如果需要)
+    // const wasmBytes = fs.readFileSync('node_modules/docx-handlebars/docx_handlebars_bg.wasm');
+    // initSync(wasmBytes);
+    
     const processor = new DocxHandlebars();
     
     // 加载模板
     const templateBuffer = fs.readFileSync('template.docx');
-    await processor.loadTemplate(templateBuffer);
+    processor.load_template(templateBuffer);
     
     // 准备数据
     const data = {
-        name: '张三',
-        company: 'ABC公司',
-        items: [
-            { product: '产品A', price: 100 },
-            { product: '产品B', price: 200 }
+        employee: {
+            name: "陈小华",
+            department: "产品部",
+            hire_date: "2024-02-20",
+            bonus_amount: 12000
+        },
+        company: {
+            name: "创新科技有限公司",
+            address: "上海市浦东新区张江高科技园区"
+        },
+        projects: [
+            { name: "AI助手平台", status: "已上线" },
+            { name: "数据分析工具", status: "开发中" }
         ]
     };
     
     // 渲染模板
-    const result = await processor.render(data);
+    const result = processor.render(JSON.stringify(data));
     
     // 保存结果
     fs.writeFileSync('output.docx', result);
+    console.log('文档处理完成！');
 }
 
 processTemplate().catch(console.error);
+```
+
+**CommonJS 版本：**
+
+```javascript
+// 对于 CommonJS 项目，建议使用动态 import
+async function processTemplate() {
+    const { default: init, DocxHandlebars } = await import('docx-handlebars');
+    const fs = await import('fs');
+    
+    // 初始化 WASM
+    await init();
+    
+    const processor = new DocxHandlebars();
+    // ... 其余代码相同
+}
 ```
 
 ### 浏览器端
@@ -118,51 +152,99 @@ processTemplate().catch(console.error);
 <html>
 <head>
     <title>DOCX Handlebars Demo</title>
+    <meta charset="utf-8">
 </head>
 <body>
-    <input type="file" id="templateFile" accept=".docx">
-    <button onclick="processTemplate()">处理模板</button>
+    <h1>DOCX Handlebars 处理器</h1>
+    <div>
+        <input type="file" id="templateFile" accept=".docx">
+        <button onclick="processTemplate()">处理模板</button>
+    </div>
+    <div id="status"></div>
     <a id="downloadLink" style="display:none">下载结果</a>
 
     <script type="module">
-        import init, { DocxHandlebars } from './pkg-npm/docx_handlebars.js';
+        import init, { DocxHandlebars } from './node_modules/docx-handlebars/docx_handlebars.js';
+        
+        let wasmInitialized = false;
         
         async function initWasm() {
-            await init();
+            if (!wasmInitialized) {
+                await init();
+                wasmInitialized = true;
+                console.log('✓ WASM 模块初始化完成');
+            }
         }
         
         window.processTemplate = async function() {
+            const statusDiv = document.getElementById('status');
             const fileInput = document.getElementById('templateFile');
             const file = fileInput.files[0];
             
             if (!file) {
-                alert('请选择一个 DOCX 文件');
+                statusDiv.innerHTML = '<p style="color: red;">请选择一个 DOCX 文件</p>';
                 return;
             }
             
-            const arrayBuffer = await file.arrayBuffer();
-            const bytes = new Uint8Array(arrayBuffer);
-            
-            const processor = new DocxHandlebars();
-            processor.load_template(bytes);
-            
-            const data = {
-                name: '张三',
-                company: 'ABC公司'
-            };
-            
-            const result = processor.render(JSON.stringify(data));
-            
-            // 创建下载链接
-            const blob = new Blob([result], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-            const url = URL.createObjectURL(blob);
-            const link = document.getElementById('downloadLink');
-            link.href = url;
-            link.download = 'output.docx';
-            link.style.display = 'block';
-            link.textContent = '下载处理后的文档';
+            try {
+                statusDiv.innerHTML = '<p>正在处理...</p>';
+                
+                // 确保 WASM 已初始化
+                await initWasm();
+                
+                // 读取文件
+                const arrayBuffer = await file.arrayBuffer();
+                const bytes = new Uint8Array(arrayBuffer);
+                
+                // 创建处理器并加载模板
+                const processor = new DocxHandlebars();
+                processor.load_template(bytes);
+                
+                // 获取模板变量
+                const variables = processor.get_template_variables();
+                console.log('模板变量:', variables);
+                
+                // 准备测试数据
+                const data = {
+                    employee: {
+                        name: "陈小华",
+                        department: "产品部",
+                        hire_date: "2024-02-20",
+                        bonus_amount: 12000
+                    },
+                    company: {
+                        name: "创新科技有限公司",
+                        address: "上海市浦东新区张江高科技园区"
+                    },
+                    projects: [
+                        { name: "AI助手平台", status: "已上线" },
+                        { name: "数据分析工具", status: "开发中" }
+                    ]
+                };
+                
+                // 渲染模板
+                const result = processor.render(JSON.stringify(data));
+                
+                // 创建下载链接
+                const blob = new Blob([result], { 
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+                });
+                const url = URL.createObjectURL(blob);
+                const link = document.getElementById('downloadLink');
+                link.href = url;
+                link.download = 'output.docx';
+                link.style.display = 'inline-block';
+                link.textContent = '下载处理后的文档';
+                
+                statusDiv.innerHTML = '<p style="color: green;">✓ 处理完成！</p>';
+                
+            } catch (error) {
+                console.error('处理失败:', error);
+                statusDiv.innerHTML = `<p style="color: red;">❌ 处理失败: ${error.message}</p>`;
+            }
         };
         
+        // 页面加载时初始化 WASM
         initWasm();
     </script>
 </body>
@@ -172,24 +254,76 @@ processTemplate().catch(console.error);
 ### Deno
 
 ```typescript
-import { DocxHandlebars } from "https://deno.land/x/docx_handlebars/mod.ts";
+import { DocxHandlebars, init } from "jsr:@sail/docx-handlebars@0.1.6";
 
-const processor = new DocxHandlebars();
+async function processTemplate() {
+    // 初始化 WASM 模块
+    await init();
+    console.log('✓ WASM initialized');
+    
+    const processor = new DocxHandlebars();
+    console.log('✓ Processor created');
+    
+    // 加载模板
+    const templateBytes = await Deno.readFile("template.docx");
+    processor.load_template(templateBytes);
+    console.log('✓ Template loaded');
+    
+    // 获取模板变量
+    const variables = processor.get_template_variables();
+    console.log('✓ Template variables:', variables);
+    
+    // 准备数据
+    const data = {
+        employee: {
+            name: "陈小华",
+            department: "产品部",
+            position: "产品经理",
+            hire_date: "2024-02-20",
+            has_bonus: true,
+            bonus_amount: 12000,
+            email: "chenxiaohua@company.com"
+        },
+        company: {
+            name: "创新科技有限公司",
+            address: "上海市浦东新区张江高科技园区",
+            industry: "人工智能"
+        },
+        projects: [
+            {
+                name: "AI助手平台",
+                description: "智能对话系统产品设计",
+                status: "已上线",
+                duration: "3个月",
+                team_size: 8
+            },
+            {
+                name: "数据分析工具",
+                description: "用户行为分析平台",
+                status: "开发中",
+                duration: "2个月",
+                team_size: 5
+            }
+        ],
+        skills: ["产品设计", "用户研究", "数据分析", "项目管理"],
+        performance: {
+            rating: "优秀",
+            score: 92,
+            goals_achieved: 8,
+            total_goals: 10
+        }
+    };
+    
+    // 渲染模板
+    const result = processor.render(JSON.stringify(data));
+    console.log('✓ Template rendered, size:', result.length, 'bytes');
+    
+    // 保存结果
+    await Deno.writeFile("output.docx", result);
+    console.log('✓ Output saved to output.docx');
+}
 
-// 加载模板
-const templateBytes = await Deno.readFile("template.docx");
-await processor.loadTemplate(templateBytes);
-
-// 渲染数据
-const data = {
-    name: "张三",
-    company: "ABC公司"
-};
-
-const result = await processor.render(data);
-
-// 保存结果
-await Deno.writeFile("output.docx", result);
+processTemplate().catch(console.error);
 ```
 
 ## 模板语法
@@ -221,7 +355,6 @@ docx-handlebars/
 │   ├── jsr_test/     # JSR 包测试
 │   └── npm_test/     # npm 包测试
 ├── tools/            # Python 调试工具
-├── releases/         # 发版说明文档
 ├── pkg-npm/          # npm 包构建输出
 └── pkg-jsr/          # JSR 包构建输出
 ```
@@ -247,17 +380,6 @@ docx-handlebars/
 `pkg-jsr/` 目录包含用于 JSR 发版的包：
 - 支持 Deno 和 Node.js 环境  
 - 包含 JSR 特定的配置文件
-
-### 发版文档
-
-`releases/` 目录包含项目的发版说明和版本历史：
-
-- `FINAL_RELEASE_SUMMARY_0.1.4.md` - v0.1.4 最终发版总结
-- `JSR_RELEASE_0.1.4_SUMMARY.md` - JSR 平台发版说明
-- `MULTI_PLATFORM_RELEASE_0.1.4.md` - 多平台发版详情
-- `RELEASE_SUMMARY.md` - 通用发版总结
-
-详细信息请参考 `releases/README.md`。
 
 ## 开发
 
@@ -357,8 +479,13 @@ deno run --allow-net --allow-read --allow-write test.ts
 ### npm 包测试
 
 ```bash
-# Node.js 环境测试
+# Node.js 环境测试 (ES 模块)
 cd tests/npm_test
 npm install
 node test.mjs
 ```
+
+**重要提示：** 
+- npm 包使用 ES 模块格式，需要在 `.mjs` 文件中使用或在 `package.json` 中设置 `"type": "module"`
+- 必须先调用 `init()` 或 `initSync()` 初始化 WASM 模块，然后才能创建 `DocxHandlebars` 实例
+- 数据需要使用 `JSON.stringify()` 转换为字符串传递给 `render()` 方法
