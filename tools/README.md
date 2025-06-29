@@ -5,34 +5,21 @@
 ## 主要工具
 
 ### docx_debug.py ⭐ (推荐)
-**统一的DOCX调试工具**，合并了原来多个调试脚本的功能，提供一个统一的调试接口。
+**简洁的DOCX调试工具**，专注于递归遍历 DOCX 文件的 XML 结构，显示详细的元素和文本内容。
 
 **功能特性：**
-- 🔍 基础检查：提取所有文本节点内容
-- 📋 段落分析：按段落结构分析文本
-- 🔬 详细结构：递归遍历XML结构
-- 🔄 文件比较：比较两个DOCX文件的差异
-- 🚀 完整分析：包含所有分析功能
+- � 递归遍历：深度遍历 XML 结构，显示每个元素的层级关系
+- 📝 文本提取：提取并显示所有文本内容
+- 🏷️ 元素标识：清楚标识段落、文本元素、换行等
+- � 结构可视化：通过缩进显示 XML 层级结构
 
 **用法：**
 ```bash
-# 基础检查（默认模式）
+# 分析单个文件
 python docx_debug.py examples/template.docx
 
-# 段落分析
-python docx_debug.py -m paragraph examples/template.docx
-
-# 详细结构分析
-python docx_debug.py -m structure examples/template.docx
-
-# 完整分析
-python docx_debug.py -m full examples/template.docx
-
-# 比较两个文件
-python docx_debug.py -m compare examples/template.docx examples/output_deno.docx
-
 # 分析多个文件
-python docx_debug.py -m basic file1.docx file2.docx
+python docx_debug.py file1.docx file2.docx
 
 # 不指定文件时，自动使用默认文件
 python docx_debug.py
@@ -49,7 +36,6 @@ python docx_debug.py
 - `xml.etree.ElementTree` - 解析XML内容
 - `argparse` - 命令行参数解析
 - `pathlib` - 文件路径处理
-- `re` - 正则表达式
 
 ## 使用说明
 
