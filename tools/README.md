@@ -25,6 +25,21 @@ python docx_debug.py file1.docx file2.docx
 python docx_debug.py
 ```
 
+### test_table.py 🧪
+**表格保留功能测试脚本**，验证DOCX模板处理过程中表格结构是否被正确保留。
+
+**功能特性：**
+- 🏃 自动运行Rust示例
+- 📊 检查输出文件的表格结构
+- 📈 统计表格数量、行数、单元格数量
+- ✅ 提供详细的测试结果报告
+
+**用法：**
+```bash
+# 运行表格保留功能测试
+python test_table.py
+```
+
 ### 其他工具
 - `build.js` - 构建脚本
 - `update_version.js` - 版本更新脚本
