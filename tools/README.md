@@ -1,59 +1,58 @@
 # Debug Tools / 调试工具
 
-本目录包含用于调试和分析DOCX文件的Python工具脚本。
+本目录包含用于调试和分析DOCX文件的工具脚本。
 
-## 工具说明
+## 主要工具
 
-### check_template.py
-检查DOCX文件的内容，提取并显示所有文本节点。
+### docx_debug.py ⭐ (推荐)
+**统一的DOCX调试工具**，合并了原来多个调试脚本的功能，提供一个统一的调试接口。
 
-**用法：**
-```bash
-python check_template.py
-```
-
-### debug_extract.py
-调试文本提取过程，模拟Rust代码的逻辑来分析DOCX文件结构。
-
-**用法：**
-```bash
-python debug_extract.py
-```
-
-### debug_lines.py
-调试渲染后文本的行分布，保留换行信息进行分析。
+**功能特性：**
+- 🔍 基础检查：提取所有文本节点内容
+- 📋 段落分析：按段落结构分析文本
+- 🔬 详细结构：递归遍历XML结构
+- 🔄 文件比较：比较两个DOCX文件的差异
+- 🚀 完整分析：包含所有分析功能
 
 **用法：**
 ```bash
-python debug_lines.py [docx_file_path]
+# 基础检查（默认模式）
+python docx_debug.py examples/template.docx
+
+# 段落分析
+python docx_debug.py -m paragraph examples/template.docx
+
+# 详细结构分析
+python docx_debug.py -m structure examples/template.docx
+
+# 完整分析
+python docx_debug.py -m full examples/template.docx
+
+# 比较两个文件
+python docx_debug.py -m compare examples/template.docx examples/output_deno.docx
+
+# 分析多个文件
+python docx_debug.py -m basic file1.docx file2.docx
+
+# 不指定文件时，自动使用默认文件
+python docx_debug.py
 ```
 
-### debug_specific.py
-针对特定DOCX文件进行调试，提取完整的可读文本。
-
-**用法：**
-```bash
-python debug_specific.py
-```
-
-### debug_template.py
-专门分析模板文件的段落结构。
-
-**用法：**
-```bash
-python debug_template.py [template_file_path]
-```
+### 其他工具
+- `build.js` - 构建脚本
+- `update_version.js` - 版本更新脚本
 
 ## 依赖要求
 
-这些脚本都是纯Python脚本，只依赖标准库：
-- `zipfile` - 处理DOCX文件（实际是ZIP格式）
+调试工具只依赖Python标准库：
+- `zipfile` - 处理DOCX文件（ZIP格式）
 - `xml.etree.ElementTree` - 解析XML内容
-- `sys` - 系统操作
+- `argparse` - 命令行参数解析
+- `pathlib` - 文件路径处理
 - `re` - 正则表达式
 
 ## 使用说明
 
-1. 确保你有Python 3.x环境
-2. 在项目根目录或tools目录下运行相应的脚本
-3. 某些脚本可能需要修改脚本内的文件路径
+1. 确保有Python 3.6+环境
+2. 在项目根目录运行脚本
+3. 推荐使用新的 `docx_debug.py` 工具
