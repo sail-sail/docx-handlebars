@@ -404,8 +404,11 @@ npm run build:npm  # 构建 npm 包
 npm run build:jsr  # 构建 JSR 包
 
 # 运行测试
-cargo test
-wasm-pack test --headless --firefox
+# JSR 包测试
+cd tests/jsr_test && deno test --allow-net --allow-read --allow-write
+
+# npm 包测试  
+cd tests/npm_test && npm test
 ```
 
 ### 发布
