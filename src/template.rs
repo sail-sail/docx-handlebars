@@ -2,12 +2,15 @@ use serde_json::Value;
 use std::io::{Cursor, Read, Write};
 use zip::{ZipArchive, ZipWriter, write::SimpleFileOptions};
 use std::collections::HashMap;
-use crate::utils::merge_handlebars_in_xml;
+use crate::utils::{merge_handlebars_in_xml, apply_handlebars_template, validate_docx_format};
 
 pub fn render_handlebars(
   zip_bytes: Vec<u8>,
   data: &Value,
 ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+  // 首先验证输入是否为有效的 DOCX 文件
+  validate_docx_format(&zip_bytes)?;
+  
   // 创建一个 Cursor 来读取 zip 字节
   let cursor = Cursor::new(zip_bytes);
   let mut archive = ZipArchive::new(cursor)?;
@@ -70,16 +73,15 @@ pub fn render_handlebars(
 /// 处理 XML 内容，合并被分割的 Handlebars 模板语法
 fn process_xml(
     _file_name: &str,
-    xml_content: &str,
-    _data: &Value,
+    content: &str,
+    data: &Value,
 ) -> Result<String, Box<dyn std::error::Error>> {
   // 合并被分割的 Handlebars 语法
-  let merged_content = merge_handlebars_in_xml(xml_content)?;
+  let content = merge_handlebars_in_xml(content)?;
   
-  // TODO: 在这里添加 Handlebars 模板引擎处理
-  // let processed_content = apply_handlebars_template(&merged_content, data)?;
+  let content = apply_handlebars_template(&content, data)?;
   
-  Ok(merged_content)
+  Ok(content)
 }
 
 #[cfg(test)]
@@ -90,28 +92,46 @@ mod tests {
 
     #[test]
     fn test_render_docx() {
-        // 创建一个简单的测试 ZIP 文件
+        // 创建一个模拟的 DOCX 文件结构
         let mut zip_data = Vec::new();
         {
             let cursor = std::io::Cursor::new(&mut zip_data);
             let mut zip = ZipWriter::new(cursor);
-            
-            // 添加一个测试 XML 文件
             let options = SimpleFileOptions::default();
-            zip.start_file("test.xml", options).unwrap();
-            zip.write_all(b"<root>Hello World</root>").unwrap();
             
-            // 添加一个非 XML 文件
-            zip.start_file("test.txt", options).unwrap();
-            zip.write_all(b"Hello from text file").unwrap();
+            // 添加必需的 DOCX 文件
+            
+            // 1. [Content_Types].xml
+            zip.start_file("[Content_Types].xml", options).unwrap();
+            zip.write_all(br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>"#).unwrap();
+            
+            // 2. _rels/.rels
+            zip.start_file("_rels/.rels", options).unwrap();
+            zip.write_all(br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>"#).unwrap();
+            
+            // 3. word/document.xml
+            zip.start_file("word/document.xml", options).unwrap();
+            zip.write_all(br#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:body>
+<w:p><w:r><w:t>Hello {{name}}</w:t></w:r></w:p>
+</w:body>
+</w:document>"#).unwrap();
             
             zip.finish().unwrap();
         }
         
         // 创建测试数据
         let test_data = serde_json::json!({
-            "name": "Test",
-            "value": 123
+            "name": "World"
         });
         
         // 调用 render 函数
@@ -125,14 +145,15 @@ mod tests {
         // 验证输出是有效的 ZIP 文件
         let cursor = std::io::Cursor::new(output);
         let mut archive = ZipArchive::new(cursor).unwrap();
-        assert_eq!(archive.len(), 2);
+        assert!(archive.len() >= 3); // 至少包含我们添加的3个文件
         
-        // 检查文件是否存在
-        let file_names: Vec<String> = (0..archive.len())
-            .map(|i| archive.by_index(i).unwrap().name().to_string())
-            .collect();
+        // 检查 document.xml 是否被正确处理
+        let mut document_file = archive.by_name("word/document.xml").unwrap();
+        let mut content = String::new();
+        document_file.read_to_string(&mut content).unwrap();
         
-        assert!(file_names.contains(&"test.xml".to_string()));
-        assert!(file_names.contains(&"test.txt".to_string()));
+        // 验证 Handlebars 模板已被渲染
+        assert!(content.contains("Hello World"));
+        assert!(!content.contains("{{name}}"));
     }
 }

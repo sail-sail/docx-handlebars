@@ -30,6 +30,23 @@ function copyFile(src, dest, description) {
   }
 }
 
+function removeGitignoreFiles(directories) {
+  console.log('\n🧹 Cleaning up auto-generated .gitignore files...');
+  directories.forEach(dir => {
+    const gitignorePath = path.join(dir, '.gitignore');
+    try {
+      if (fs.existsSync(gitignorePath)) {
+        fs.unlinkSync(gitignorePath);
+        console.log(`✓ Removed ${gitignorePath}`);
+      } else {
+        console.log(`✓ No .gitignore found in ${dir}`);
+      }
+    } catch (error) {
+      console.error(`❌ Failed to remove ${gitignorePath}:`, error.message);
+    }
+  });
+}
+
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -84,6 +101,9 @@ copyFile('LICENSE-MIT', 'pkg-jsr/LICENSE-MIT', 'LICENSE-MIT');
 copyFile('README.md', 'pkg-jsr/README.md', 'README.md');
 
 console.log('✅ JSR package files are ready');
+
+// 清理自动生成的 .gitignore 文件
+removeGitignoreFiles(['pkg-npm', 'pkg-jsr']);
 
 console.log('\n🎉 All builds completed successfully!');
 console.log('\n📁 Output directories:');

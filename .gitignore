@@ -19,7 +19,6 @@ yarn-error.log*
 Thumbs.db
 
 # Test files
-*.docx
 test_*.docx
 output_*.docx
 

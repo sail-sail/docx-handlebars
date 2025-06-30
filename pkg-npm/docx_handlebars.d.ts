@@ -3,39 +3,17 @@
 /**
  * 主要的 DOCX Handlebars 处理器
  */
-export class DocxHandlebars {
-  free(): void;
-  /**
-   * 创建新的 DocxHandlebars 实例
-   */
-  constructor();
-  /**
-   * 加载 DOCX 模板文件
-   */
-  load_template(bytes: Uint8Array): void;
-  /**
-   * 使用给定数据渲染模板
-   */
-  render(data_json: string): Uint8Array;
-  /**
-   * 获取模板中的变量列表
-   */
-  get_template_variables(): string;
-}
+export function render(zip_bytes: Uint8Array, data_json: string): any;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly __wbg_docxhandlebars_free: (a: number, b: number) => void;
-  readonly docxhandlebars_new: () => number;
-  readonly docxhandlebars_load_template: (a: number, b: number, c: number) => [number, number];
-  readonly docxhandlebars_render: (a: number, b: number, c: number) => [number, number, number, number];
-  readonly docxhandlebars_get_template_variables: (a: number) => [number, number, number, number];
+  readonly render: (a: number, b: number, c: number, d: number) => [number, number, number];
+  readonly __wbindgen_export_0: WebAssembly.Table;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
-  readonly __wbindgen_export_3: WebAssembly.Table;
   readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_start: () => void;
 }

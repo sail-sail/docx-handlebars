@@ -1,5 +1,5 @@
 // Comprehensive test for JSR package with actual file processing
-import { DocxHandlebars, init } from "jsr:@sail/docx-handlebars@0.1.6";
+import { render, init } from "../../pkg-jsr/mod.ts";
 
 async function comprehensiveTest() {
   try {
@@ -9,22 +9,13 @@ async function comprehensiveTest() {
     await init();
     console.log('✓ WASM initialized');
     
-    const processor = new DocxHandlebars();
-    console.log('✓ Processor created');
+    console.log('✓ render function imported');
     
     // Try to read the template file from parent directory
     try {
       const templatePath = "../../examples/template.docx";
       const templateBytes = await Deno.readFile(templatePath);
       console.log('✓ Template file loaded:', templateBytes.length, 'bytes');
-      
-      // Load template
-      processor.load_template(templateBytes);
-      console.log('✓ Template loaded into processor');
-      
-      // Get template variables
-      const variables = processor.get_template_variables();
-      console.log('✓ Template variables:', variables);
       
       // Render with test data
       const testData = {
@@ -85,11 +76,11 @@ async function comprehensiveTest() {
             }
         };
       
-      const result = processor.render(JSON.stringify(testData));
+      const result = render(templateBytes, JSON.stringify(testData));
       console.log('✓ Template rendered successfully, result size:', result.length, 'bytes');
       
       // Save output
-      await Deno.writeFile("output_jsr_test.docx", result);
+      await Deno.writeFile("output_jsr_test.docx", new Uint8Array(result));
       console.log('✓ Output saved to output_jsr_test.docx');
       
       console.log('🎉 Comprehensive JSR test completed successfully!');

@@ -134,7 +134,7 @@
 
         <div class="test-section">
             <h3>🔧 基础功能测试 <span id="basic-status" class="status-badge badge-pending">待测试</span></h3>
-            <p>测试 DocxHandlebars 类的基本功能</p>
+            <p>测试新的函数式 API 的基本功能</p>
             <button onclick="testBasicFunctionality()" id="basic-test-btn" disabled>基础功能测试</button>
         </div>
 
@@ -163,7 +163,8 @@
     </div>
 
     <script type="module">
-        let DocxHandlebars = null;
+        let wasmModule = null;
+        let render = null;
         let isWasmReady = false;
         
         function addResult(message, type = 'info') {
@@ -188,25 +189,26 @@
             try {
                 addResult('📦 尝试从 node_modules 加载包...', 'info');
                 
-                // 方法1: 尝试直接导入
+                // 使用新的函数式 API
                 try {
                     const pkg = await import('./node_modules/docx-handlebars/docx_handlebars.js');
-                    await pkg["default"]();
-                    DocxHandlebars = pkg.DocxHandlebars;
-                    addResult('✓ 成功加载 npm 版本', 'success');
+                    await pkg["default"](); // 初始化 WASM
+                    render = pkg.render; // 获取 render 函数
+                    wasmModule = pkg;
+                    addResult('✓ 成功加载 npm 版本 (函数式 API)', 'success');
                 } catch (nodeError) {
                     addResult(`⚠ npm 版本加载失败: ${nodeError.message}`, 'warning');
                     throw nodeError;
                 }
                 
-                if (DocxHandlebars) {
+                if (render && typeof render === 'function') {
                     isWasmReady = true;
                     updateStatus('load-status', 'success');
                     document.getElementById('basic-test-btn').disabled = false;
                     document.getElementById('file-test-btn').disabled = false;
                     addResult('🎉 包加载成功！WASM 模块已就绪', 'success');
                 } else {
-                    throw new Error('DocxHandlebars 类未找到');
+                    throw new Error('render 函数未找到');
                 }
                 
             } catch (error) {
@@ -226,26 +228,19 @@
             addResult('🧪 开始基础功能测试...', 'info');
             
             try {
-                // 创建实例
-                const processor = new DocxHandlebars();
-                addResult('✓ DocxHandlebars 实例创建成功', 'success');
-                
-                // 检查方法
-                const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(processor));
-                addResult(`✓ 可用方法 (${methods.length}个): ${methods.join(', ')}`, 'success');
-                
-                // 测试关键方法存在性
-                const requiredMethods = ['load_template', 'render', 'get_template_variables'];
-                for (const method of requiredMethods) {
-                    if (typeof processor[method] === 'function') {
-                        addResult(`✓ ${method} 方法可用`, 'success');
-                    } else {
-                        throw new Error(`缺少必需方法: ${method}`);
-                    }
+                // 检查 render 函数
+                if (typeof render === 'function') {
+                    addResult('✓ render 函数可用', 'success');
+                } else {
+                    throw new Error('render 函数不可用');
                 }
                 
+                // 检查其他可用的导出
+                const exports = Object.keys(wasmModule);
+                addResult(`✓ 可用导出 (${exports.length}个): ${exports.join(', ')}`, 'success');
+                
                 updateStatus('basic-status', 'success');
-                addResult('🎉 基础功能测试完成！所有方法都可用', 'success');
+                addResult('🎉 基础功能测试完成！新的函数式 API 可用', 'success');
                 
             } catch (error) {
                 updateStatus('basic-status', 'error');
@@ -279,21 +274,6 @@
                 const uint8Array = new Uint8Array(arrayBuffer);
                 addResult(`✓ 文件读取成功`, 'success');
                 
-                // 创建处理器
-                const processor = new DocxHandlebars();
-                
-                // 加载模板
-                processor.load_template(uint8Array);
-                addResult('✓ 模板加载到处理器成功', 'success');
-                
-                // 获取变量
-                try {
-                    const variables = processor.get_template_variables();
-                    addResult(`✓ 模板变量: ${variables}`, 'success');
-                } catch (varError) {
-                    addResult(`⚠ 获取变量失败: ${varError.message}`, 'warning');
-                }
-                
                 // 验证JSON数据
                 const testData = dataTextarea.value.trim();
                 let parsedData;
@@ -304,8 +284,9 @@
                     throw new Error(`JSON 数据格式错误: ${jsonError.message}`);
                 }
                 
-                // 渲染
-                const result = processor.render(testData);
+                // 使用新的函数式 API 进行渲染
+                addResult('🎨 使用新的函数式 API 渲染模板...', 'info');
+                const result = render(uint8Array, testData);
                 addResult(`✓ 模板渲染成功: ${result.length} 字节`, 'success');
                 
                 // 创建下载链接
@@ -330,7 +311,7 @@
                 });
                 
                 updateStatus('file-status', 'success');
-                addResult('✅ 文件处理测试完成！', 'success');
+                addResult('✅ 文件处理测试完成！新的函数式 API 运行良好', 'success');
                 
             } catch (error) {
                 updateStatus('file-status', 'error');
@@ -346,6 +327,7 @@
         window.addEventListener('load', () => {
             addResult('🌐 浏览器环境初始化完成', 'info');
             addResult('💡 点击"开始加载测试"来测试 npm 包的浏览器兼容性', 'info');
+            addResult('🔄 现在使用新的函数式 API (render 函数)', 'info');
         });
     </script>
 </body>

@@ -15,12 +15,13 @@
 
 ## 功能特性
 
-- ✅ 解析和处理 DOCX 文件
-- ✅ Handlebars 模板引擎集成
-- ✅ 支持复杂的模板语法（循环、条件等）
-- ✅ 跨平台兼容性
-- ✅ TypeScript 类型定义
-- ✅ 零依赖的 WASM 二进制文件
+- ✅ **智能合并**：自动处理被 XML 标签分割的 Handlebars 语法
+- ✅ **DOCX 验证**：内置文件格式验证，确保输入文件有效
+- ✅ **Handlebars 支持**：完整的模板引擎，支持变量、条件、循环、Helper 函数
+- ✅ **跨平台**：Rust 原生 + WASM 支持多种运行时
+- ✅ **TypeScript**：完整的类型定义和智能提示
+- ✅ **零依赖**：WASM 二进制文件，无外部依赖
+- ✅ **错误处理**：详细的错误信息和类型安全的错误处理
 
 ## 安装
 
@@ -39,7 +40,7 @@ npm install docx-handlebars
 ### Deno
 
 ```typescript
-import { DocxHandlebars } from "https://deno.land/x/docx_handlebars/mod.ts";
+import { render, init } from "https://deno.land/x/docx_handlebars/mod.ts";
 ```
 
 ### JSR
@@ -53,23 +54,28 @@ npx jsr add @sail/docx-handlebars
 ### Rust
 
 ```rust
-use docx_handlebars::{DocxHandlebars, TemplateData};
-use std::collections::HashMap;
+use docx_handlebars::render_handlebars;
+use serde_json::json;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut processor = DocxHandlebars::new();
-    
-    // 加载 DOCX 模板
+    // 读取 DOCX 模板文件
     let template_bytes = std::fs::read("template.docx")?;
-    processor.load_template(&template_bytes)?;
     
     // 准备数据
-    let mut data = HashMap::new();
-    data.insert("name".to_string(), "张三".into());
-    data.insert("company".to_string(), "ABC公司".into());
+    let data = json!({
+        "name": "张三",
+        "company": "ABC科技有限公司",
+        "position": "软件工程师",
+        "projects": [
+            {"name": "项目A", "status": "已完成"},
+            {"name": "项目B", "status": "进行中"}
+        ],
+        "has_bonus": true,
+        "bonus_amount": 5000
+    });
     
     // 渲染模板
-    let result = processor.render(&data)?;
+    let result = render_handlebars(template_bytes, &data)?;
     
     // 保存结果
     std::fs::write("output.docx", result)?;
@@ -81,67 +87,70 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### JavaScript/TypeScript (Node.js)
 
 ```javascript
-// ES模块版本 (推荐)
-import init, { DocxHandlebars, initSync } from 'docx-handlebars';
+import { render, init } from 'docx-handlebars';
 import fs from 'fs';
-import path from 'path';
 
 async function processTemplate() {
-    // 方法1: 异步初始化 WASM
+    // 初始化 WASM 模块
     await init();
     
-    // 方法2: 同步初始化 WASM (如果需要)
-    // const wasmBytes = fs.readFileSync('node_modules/docx-handlebars/docx_handlebars_bg.wasm');
-    // initSync(wasmBytes);
-    
-    const processor = new DocxHandlebars();
-    
-    // 加载模板
-    const templateBuffer = fs.readFileSync('template.docx');
-    processor.load_template(templateBuffer);
+    // 读取模板文件
+    const templateBytes = fs.readFileSync('template.docx');
     
     // 准备数据
     const data = {
-        employee: {
-            name: "陈小华",
-            department: "产品部",
-            hire_date: "2024-02-20",
-            bonus_amount: 12000
-        },
-        company: {
-            name: "创新科技有限公司",
-            address: "上海市浦东新区张江高科技园区"
-        },
+        name: "李明",
+        company: "XYZ技术有限公司",
+        position: "高级开发工程师",
         projects: [
-            { name: "AI助手平台", status: "已上线" },
-            { name: "数据分析工具", status: "开发中" }
-        ]
+            { name: "E-commerce平台", status: "已完成" },
+            { name: "移动端APP", status: "开发中" }
+        ],
+        has_bonus: true,
+        bonus_amount: 8000
     };
     
     // 渲染模板
-    const result = processor.render(JSON.stringify(data));
+    const result = render(templateBytes, JSON.stringify(data));
     
     // 保存结果
-    fs.writeFileSync('output.docx', result);
-    console.log('文档处理完成！');
+    fs.writeFileSync('output.docx', new Uint8Array(result));
 }
 
 processTemplate().catch(console.error);
 ```
 
-**CommonJS 版本：**
+### Deno
 
-```javascript
-// 对于 CommonJS 项目，建议使用动态 import
+```typescript
+import { render, init } from "https://deno.land/x/docx_handlebars/mod.ts";
+
 async function processTemplate() {
-    const { default: init, DocxHandlebars } = await import('docx-handlebars');
-    const fs = await import('fs');
-    
-    // 初始化 WASM
+    // 初始化 WASM 模块
     await init();
     
-    const processor = new DocxHandlebars();
-    // ... 其余代码相同
+    // 读取模板文件
+    const templateBytes = await Deno.readFile("template.docx");
+    
+    // 准备数据
+    const data = {
+        name: "王小明",
+        department: "研发部",
+        projects: [
+            { name: "智能客服系统", status: "已上线" },
+            { name: "数据可视化平台", status: "开发中" }
+        ]
+    };
+    
+    // 渲染模板
+    const result = render(templateBytes, JSON.stringify(data));
+    
+    // 保存结果
+    await Deno.writeFile("output.docx", new Uint8Array(result));
+}
+
+if (import.meta.main) {
+    await processTemplate();
 }
 ```
 
@@ -151,344 +160,308 @@ async function processTemplate() {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DOCX Handlebars Demo</title>
-    <meta charset="utf-8">
+    <title>DOCX Handlebars 示例</title>
 </head>
 <body>
-    <h1>DOCX Handlebars 处理器</h1>
-    <div>
-        <input type="file" id="templateFile" accept=".docx">
-        <button onclick="processTemplate()">处理模板</button>
-    </div>
-    <div id="status"></div>
-    <a id="downloadLink" style="display:none">下载结果</a>
-
+    <input type="file" id="fileInput" accept=".docx">
+    <button onclick="processFile()">处理模板</button>
+    
     <script type="module">
-        import init, { DocxHandlebars } from './node_modules/docx-handlebars/docx_handlebars.js';
+        import { render, init } from './pkg/docx_handlebars.js';
         
-        let wasmInitialized = false;
+        // 初始化 WASM
+        await init();
         
-        async function initWasm() {
-            if (!wasmInitialized) {
-                await init();
-                wasmInitialized = true;
-                console.log('✓ WASM 模块初始化完成');
-            }
-        }
-        
-        window.processTemplate = async function() {
-            const statusDiv = document.getElementById('status');
-            const fileInput = document.getElementById('templateFile');
+        window.processFile = async function() {
+            const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
             
-            if (!file) {
-                statusDiv.innerHTML = '<p style="color: red;">请选择一个 DOCX 文件</p>';
-                return;
-            }
+            if (!file) return;
+            
+            const arrayBuffer = await file.arrayBuffer();
+            const templateBytes = new Uint8Array(arrayBuffer);
+            
+            const data = {
+                name: "张三",
+                company: "示例公司"
+            };
             
             try {
-                statusDiv.innerHTML = '<p>正在处理...</p>';
+                const result = render(templateBytes, JSON.stringify(data));
                 
-                // 确保 WASM 已初始化
-                await initWasm();
-                
-                // 读取文件
-                const arrayBuffer = await file.arrayBuffer();
-                const bytes = new Uint8Array(arrayBuffer);
-                
-                // 创建处理器并加载模板
-                const processor = new DocxHandlebars();
-                processor.load_template(bytes);
-                
-                // 获取模板变量
-                const variables = processor.get_template_variables();
-                console.log('模板变量:', variables);
-                
-                // 准备测试数据
-                const data = {
-                    employee: {
-                        name: "陈小华",
-                        department: "产品部",
-                        hire_date: "2024-02-20",
-                        bonus_amount: 12000
-                    },
-                    company: {
-                        name: "创新科技有限公司",
-                        address: "上海市浦东新区张江高科技园区"
-                    },
-                    projects: [
-                        { name: "AI助手平台", status: "已上线" },
-                        { name: "数据分析工具", status: "开发中" }
-                    ]
-                };
-                
-                // 渲染模板
-                const result = processor.render(JSON.stringify(data));
-                
-                // 创建下载链接
-                const blob = new Blob([result], { 
-                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+                // 下载结果
+                const blob = new Blob([new Uint8Array(result)], {
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
                 });
                 const url = URL.createObjectURL(blob);
-                const link = document.getElementById('downloadLink');
-                link.href = url;
-                link.download = 'output.docx';
-                link.style.display = 'inline-block';
-                link.textContent = '下载处理后的文档';
-                
-                statusDiv.innerHTML = '<p style="color: green;">✓ 处理完成！</p>';
-                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'processed.docx';
+                a.click();
             } catch (error) {
                 console.error('处理失败:', error);
-                statusDiv.innerHTML = `<p style="color: red;">❌ 处理失败: ${error.message}</p>`;
             }
         };
-        
-        // 页面加载时初始化 WASM
-        initWasm();
     </script>
 </body>
 </html>
 ```
 
-### Deno
-
-```typescript
-import { DocxHandlebars, init } from "jsr:@sail/docx-handlebars@0.1.6";
-
-async function processTemplate() {
-    // 初始化 WASM 模块
-    await init();
-    console.log('✓ WASM initialized');
-    
-    const processor = new DocxHandlebars();
-    console.log('✓ Processor created');
-    
-    // 加载模板
-    const templateBytes = await Deno.readFile("template.docx");
-    processor.load_template(templateBytes);
-    console.log('✓ Template loaded');
-    
-    // 获取模板变量
-    const variables = processor.get_template_variables();
-    console.log('✓ Template variables:', variables);
-    
-    // 准备数据
-    const data = {
-        employee: {
-            name: "陈小华",
-            department: "产品部",
-            position: "产品经理",
-            hire_date: "2024-02-20",
-            has_bonus: true,
-            bonus_amount: 12000,
-            email: "chenxiaohua@company.com"
-        },
-        company: {
-            name: "创新科技有限公司",
-            address: "上海市浦东新区张江高科技园区",
-            industry: "人工智能"
-        },
-        projects: [
-            {
-                name: "AI助手平台",
-                description: "智能对话系统产品设计",
-                status: "已上线",
-                duration: "3个月",
-                team_size: 8
-            },
-            {
-                name: "数据分析工具",
-                description: "用户行为分析平台",
-                status: "开发中",
-                duration: "2个月",
-                team_size: 5
-            }
-        ],
-        skills: ["产品设计", "用户研究", "数据分析", "项目管理"],
-        performance: {
-            rating: "优秀",
-            score: 92,
-            goals_achieved: 8,
-            total_goals: 10
-        }
-    };
-    
-    // 渲染模板
-    const result = processor.render(JSON.stringify(data));
-    console.log('✓ Template rendered, size:', result.length, 'bytes');
-    
-    // 保存结果
-    await Deno.writeFile("output.docx", result);
-    console.log('✓ Output saved to output.docx');
-}
-
-processTemplate().catch(console.error);
-```
-
 ## 模板语法
 
-支持完整的 Handlebars 语法：
+### 基础变量替换
 
 ```handlebars
-{{name}} 在 {{company}} 工作
+员工姓名: {{name}}
+公司: {{company}}
+职位: {{position}}
+```
 
-{{#if hasItems}}
-产品列表：
-{{#each items}}
-- {{product}}: ¥{{price}}
-{{/each}}
+### 条件渲染
+
+```handlebars
+{{#if has_bonus}}
+奖金: ¥{{bonus_amount}}
+{{else}}
+无奖金
 {{/if}}
 
-{{#unless isEmpty}}
-总计: ¥{{total}}
+{{#unless is_intern}}
+正式员工
 {{/unless}}
 ```
 
-## 项目结构
+### 循环渲染
 
+```handlebars
+项目经历:
+{{#each projects}}
+- {{name}}: {{description}} ({{status}})
+{{/each}}
+
+技能列表:
+{{#each skills}}
+{{@index}}. {{this}}
+{{/each}}
 ```
-docx-handlebars/
-├── src/              # Rust 源代码
-├── examples/         # 使用示例
-├── tests/            # 集成测试
-│   ├── jsr_test/     # JSR 包测试
-│   └── npm_test/     # npm 包测试
-├── tools/            # Python 调试工具
-├── pkg-npm/          # npm 包构建输出
-└── pkg-jsr/          # JSR 包构建输出
+
+### Helper 函数
+
+内置的 Helper 函数：
+
+```handlebars
+{{upper name}}           <!-- 转大写 -->
+{{lower company}}        <!-- 转小写 -->
+{{len projects}}         <!-- 数组长度 -->
+{{#if (eq status "completed")}}已完成{{/if}}    <!-- 相等比较 -->
+{{#if (gt score 90)}}优秀{{/if}}               <!-- 大于比较 -->
+{{#if (lt age 30)}}年轻{{/if}}                 <!-- 小于比较 -->
 ```
 
-### 调试工具
+### 复杂示例
 
-`tools/` 目录包含用于调试和分析DOCX文件的Python工具：
+```handlebars
+=== 员工报告 ===
 
-- `check_template.py` - 检查DOCX文件内容
-- `debug_extract.py` - 调试文本提取过程
-- `debug_lines.py` - 调试渲染后文本的行分布
-- `debug_specific.py` - 特定DOCX文件调试
-- `debug_template.py` - 分析模板文件的段落结构
+基本信息:
+姓名: {{employee.name}}
+部门: {{employee.department}}
+职位: {{employee.position}}
+入职时间: {{employee.hire_date}}
 
-详细使用说明请参考 `tools/README.md`。
+{{#if employee.has_bonus}}
+💰 奖金: ¥{{employee.bonus_amount}}
+{{/if}}
 
-### 发版包目录
+项目经历 (共{{len projects}}个):
+{{#each projects}}
+{{@index}}. {{name}}
+   描述: {{description}}
+   状态: {{status}}
+   团队规模: {{team_size}}人
+   
+{{/each}}
 
-`pkg-npm/` 目录包含用于 npm 发版的包：
-- 支持 Node.js 和浏览器环境
-- 使用 web target 构建
+技能评估:
+{{#each skills}}
+- {{name}}: {{level}}/10 ({{years}}年经验)
+{{/each}}
 
-`pkg-jsr/` 目录包含用于 JSR 发版的包：
-- 支持 Deno 和 Node.js 环境  
-- 包含 JSR 特定的配置文件
+{{#if (gt performance.score 90)}}
+🎉 绩效评级: 优秀
+{{else if (gt performance.score 80)}}
+👍 绩效评级: 良好
+{{else}}
+📈 绩效评级: 需改进
+{{/if}}
+```
 
-## 开发
+## 错误处理
 
-### 前置条件
+库提供了详细的错误类型和消息：
 
-- Rust 1.70+
-- wasm-pack
-- Node.js 16+
+### Rust
 
-### 构建
+```rust
+use docx_handlebars::{render_handlebars, DocxError};
+
+match render_handlebars(template_bytes, &data) {
+    Ok(result) => {
+        println!("处理成功！");
+        std::fs::write("output.docx", result)?;
+    }
+    Err(e) => match e.downcast_ref::<DocxError>() {
+        Some(DocxError::FileTooSmall) => {
+            eprintln!("错误: 文件太小，不是有效的 DOCX 文件");
+        }
+        Some(DocxError::InvalidZipSignature) => {
+            eprintln!("错误: 文件不是有效的 ZIP/DOCX 格式");
+        }
+        Some(DocxError::MissingRequiredFile(filename)) => {
+            eprintln!("错误: 缺少必需的 DOCX 文件: {}", filename);
+        }
+        _ => {
+            eprintln!("其他错误: {}", e);
+        }
+    }
+}
+```
+
+### JavaScript/TypeScript
+
+```javascript
+try {
+    const result = render(templateBytes, JSON.stringify(data));
+    console.log('处理成功！');
+} catch (error) {
+    if (error.message.includes('文件大小不足')) {
+        console.error('文件太小，不是有效的 DOCX 文件');
+    } else if (error.message.includes('无效的 ZIP 签名')) {
+        console.error('文件不是有效的 ZIP/DOCX 格式');
+    } else if (error.message.includes('缺少必需的 DOCX 文件')) {
+        console.error('文件不包含必需的 DOCX 组件');
+    } else if (error.message.includes('模板渲染失败')) {
+        console.error('Handlebars 模板语法错误或数据不匹配');
+    } else {
+        console.error('处理失败:', error.message);
+    }
+}
+```
+
+## 构建和开发
+
+### 构建 WASM 包
 
 ```bash
-# 构建所有包（推荐）
+# 构建所有目标
 npm run build
 
-# 或者分别构建：
-# 构建 Rust 库
-cargo build --release
-
-# 单独构建各平台包
-npm run build:npm  # 构建 npm 包
-npm run build:jsr  # 构建 JSR 包
-
-# 运行测试
-# JSR 包测试
-cd tests/jsr_test && deno test --allow-net --allow-read --allow-write
-
-# npm 包测试  
-cd tests/npm_test && npm test
+# 或分别构建
+npm run build:web    # 浏览器版本
+npm run build:npm    # Node.js 版本 
+npm run build:jsr    # Deno 版本
 ```
 
-### 发布
+### 运行示例
 
 ```bash
-# 1. 首先构建所有包
-npm run build
+# Rust 示例
+cargo run --example rust_example
 
-# 2. 发布到各平台
-# 发布到 crates.io
-cargo publish
+# Node.js 示例
+node examples/node_example.js
 
-# 发布到 npm
-cd pkg-npm && npm publish
+# Deno 示例  
+deno run --allow-read --allow-write examples/deno_example.ts
 
-# 发布到 JSR
-cd pkg-jsr && deno publish
+# 浏览器示例
+# 启动本地服务器并打开 examples/browser_demo.html
 ```
+
+## 技术特性
+
+### 智能合并算法
+
+该库的核心创新是智能合并被 XML 标签分割的 Handlebars 语法。在 DOCX 文件中，当用户输入模板语法时，Word 可能会将其拆分成多个 XML 标签：
+
+**原始分割状态：**
+```xml
+<w:t>员工姓名: {{</w:t><w:t>employee.name</w:t><w:t>}}</w:t>
+```
+
+**智能合并后：**
+```xml
+<w:t>员工姓名: {{employee.name}}</w:t>
+```
+
+支持的合并模式：
+- 简单分割: `<w:t>{{</w:t><w:t>variable}}</w:t>`
+- 部分分割: `<w:t>{{part1</w:t><w:t>part2}}</w:t>`
+- 三段分割: `<w:t>{{</w:t><w:t>part1</w:t><w:t>part2}}</w:t>`
+- 复杂嵌套: `<w:t>prefix{{</w:t><w:t>content</w:t><w:t>}}suffix</w:t>`
+
+### 文件验证
+
+内置的 DOCX 文件验证确保输入文件的完整性：
+
+1. **ZIP 格式验证**：检查文件签名和结构
+2. **DOCX 结构验证**：确保包含必要的文件
+   - `[Content_Types].xml`
+   - `_rels/.rels` 
+   - `word/document.xml`
+3. **MIME 类型验证**：验证内容类型正确性
+
+## 性能和兼容性
+
+- **零拷贝**: Rust 和 WASM 之间高效的内存管理
+- **流式处理**: 适合处理大型 DOCX 文件
+- **跨平台**: 支持 Windows、macOS、Linux、Web
+- **现代浏览器**: 支持所有支持 WASM 的现代浏览器
 
 ## 许可证
 
-本项目采用 MIT 许可证。
+本项目采用 MIT 许可证 - 详见 [LICENSE-MIT](LICENSE-MIT) 文件。
 
 ## 贡献
 
-欢迎提交 Issue 和 Pull Request！
+欢迎贡献代码！请查看我们的贡献指南：
+
+1. Fork 项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
 
 ## 更新日志
 
-### 0.1.0
-- 初始版本
-- 基本的 DOCX 模板处理功能
-- 支持多平台部署
+### v0.1.6
 
-## 测试
+- ✨ **重大重构**: 采用函数式 API，更简洁易用
+- ✨ **智能合并**: 完善的 Handlebars 语法分割合并算法  
+- ✨ **文件验证**: 内置 DOCX 格式验证和错误处理
+- ✨ **错误处理**: 使用 thiserror 提供详细的错误信息
+- ✨ **Helper 函数**: 内置常用的 Handlebars helper
+- 🐛 **修复**: 多种边界情况和兼容性问题
+- 📚 **文档**: 全面更新文档和示例
+- 🧪 **测试**: 完整的测试覆盖和验证脚本
 
-### 浏览器兼容性测试
+## 支持
 
-本项目提供了完整的浏览器兼容性测试套件，确保 npm 包在各种浏览器环境中正常工作：
+- 📚 [文档](https://docs.rs/docx-handlebars)
+- 🐛 [问题反馈](https://github.com/sail-sail/docx-handlebars/issues)
+- 💬 [讨论](https://github.com/sail-sail/docx-handlebars/discussions)
 
-```bash
-# 进入测试目录
-cd tests/npm_test
+---
 
-# 启动测试服务器
-node server.js
-
-# 在浏览器中访问
-# http://localhost:8080/tests/npm_test/browser_test_npm.html
-```
-
-测试功能包括：
-- ✅ 包加载测试（多种构建版本）
-- ✅ WASM 模块初始化
-- ✅ 基础功能验证
-- ✅ 实际文件处理测试
-- ✅ 文件下载功能
-
-支持的构建版本：
-- `pkg-npm/` - npm 包，同时支持 Node.js 和浏览器环境
-- `pkg-jsr/` - JSR 包，同时支持 Deno 和 Node.js 环境
-
-### JSR 包测试
-
-```bash
-# JSR 包综合测试
-cd tests/jsr_test
-deno run --allow-net --allow-read --allow-write test.ts
-```
-
-### npm 包测试
-
-```bash
-# Node.js 环境测试 (ES 模块)
-cd tests/npm_test
-npm install
-node test.mjs
-```
-
-**重要提示：** 
-- npm 包使用 ES 模块格式，需要在 `.mjs` 文件中使用或在 `package.json` 中设置 `"type": "module"`
-- 必须先调用 `init()` 或 `initSync()` 初始化 WASM 模块，然后才能创建 `DocxHandlebars` 实例
-- 数据需要使用 `JSON.stringify()` 转换为字符串传递给 `render()` 方法
+<div align="center">
+  <p>
+    <strong>docx-handlebars</strong> - 让 DOCX 模板处理变得简单高效
+  </p>
+  <p>
+    <a href="https://github.com/sail-sail/docx-handlebars">⭐ 给项目点个星</a>
+    ·
+    <a href="https://github.com/sail-sail/docx-handlebars/issues">🐛 报告问题</a>
+    ·
+    <a href="https://github.com/sail-sail/docx-handlebars/discussions">💬 参与讨论</a>
+  </p>
+</div>

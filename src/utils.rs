@@ -1,101 +1,71 @@
 //! 实用工具函数
 
+use std::io::Read;
+use crate::errors::DocxError;
+
 /// 验证 DOCX 文件格式
-pub fn validate_docx_format(bytes: &[u8]) -> bool {
-    // 检查是否为有效的 ZIP 文件
-    if bytes.len() < 4 {
-        return false;
+/// 检查文件是否为有效的 ZIP 格式，并包含必需的 DOCX 文件结构
+pub fn validate_docx_format(file_data: &[u8]) -> Result<(), DocxError> {
+    // 检查文件大小
+    if file_data.len() < 22 {
+        return Err(DocxError::FileTooSmall);
     }
     
-    // ZIP 文件签名
-    bytes[0..4] == [0x50, 0x4B, 0x03, 0x04] || bytes[0..4] == [0x50, 0x4B, 0x05, 0x06]
-}
-
-/// 转义 XML 特殊字符
-pub fn escape_xml(text: &str) -> String {
-    text.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&apos;")
-}
-
-/// 反转义 XML 特殊字符
-pub fn unescape_xml(text: &str) -> String {
-    text.replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&apos;", "'")
-}
-
-/// 验证 Handlebars 模板语法
-pub fn validate_handlebars_syntax(template: &str) -> Result<(), String> {
-    use handlebars::Handlebars;
+    // 检查 ZIP 文件签名
+    // ZIP 文件的签名通常是 0x504B0304 (PK..) 或 0x504B0506 (PK.. 空文件)
+    // 或者 0x504B0708 (PK.. 分割压缩包)
+    let signature = u32::from_le_bytes([
+        file_data[0], file_data[1], file_data[2], file_data[3]
+    ]);
     
-    let handlebars = Handlebars::new();
-    match handlebars.render_template(template, &serde_json::json!({})) {
-        Ok(_) => Ok(()),
-        Err(e) => Err(format!("模板语法错误: {}", e)),
-    }
-}
-
-/// 提取文件扩展名
-pub fn get_file_extension(filename: &str) -> Option<&str> {
-    std::path::Path::new(filename)
-        .extension()
-        .and_then(|ext| ext.to_str())
-}
-
-/// 生成唯一 ID（WASM 兼容版本）
-pub fn generate_unique_id() -> String {
-    // 在 WASM 环境中使用简单的计数器或随机数
-    // 避免使用 SystemTime，因为在 WASM 平台上不可用
-    use std::sync::atomic::{AtomicU64, Ordering};
-    
-    static COUNTER: AtomicU64 = AtomicU64::new(1);
-    let id = COUNTER.fetch_add(1, Ordering::SeqCst);
-    
-    format!("id_{}", id)
-}
-
-/// 检查是否为有效的 JSON
-pub fn is_valid_json(text: &str) -> bool {
-    serde_json::from_str::<serde_json::Value>(text).is_ok()
-}
-
-/// 安全地解析 JSON
-pub fn safe_json_parse(text: &str) -> Result<serde_json::Value, String> {
-    serde_json::from_str(text).map_err(|e| format!("JSON 解析错误: {}", e))
-}
-
-/// 字节数组转十六进制字符串
-pub fn bytes_to_hex(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{:02x}", b)).collect()
-}
-
-/// 计算文件大小的人类可读格式
-pub fn format_file_size(size: u64) -> String {
-    const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
-    const THRESHOLD: u64 = 1024;
-    
-    if size == 0 {
-        return "0 B".to_string();
+    match signature {
+        0x04034b50 | 0x06054b50 | 0x08074b50 => {
+            // 有效的 ZIP 签名
+        },
+        _ => return Err(DocxError::InvalidZipSignature),
     }
     
-    let mut size_f = size as f64;
-    let mut unit_index = 0;
+    // 尝试解析 ZIP 文件并检查必需的 DOCX 结构
+    validate_docx_structure(file_data)?;
     
-    while size_f >= THRESHOLD as f64 && unit_index < UNITS.len() - 1 {
-        size_f /= THRESHOLD as f64;
-        unit_index += 1;
+    Ok(())
+}
+
+/// 验证 DOCX 文件的内部结构
+fn validate_docx_structure(file_data: &[u8]) -> Result<(), DocxError> {
+    use std::io::Cursor;
+    use zip::ZipArchive;
+    
+    let cursor = Cursor::new(file_data);
+    let mut zip = match ZipArchive::new(cursor) {
+        Ok(zip) => zip,
+        Err(e) => return Err(DocxError::ZipReadError(format!("无法读取 ZIP 文件: {}", e))),
+    };
+    
+    // 检查必需的 DOCX 文件
+    let required_files = vec![
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "word/document.xml",
+    ];
+    
+    for required_file in required_files {
+        if zip.by_name(required_file).is_err() {
+            return Err(DocxError::MissingRequiredFile(required_file.to_string()));
+        }
     }
     
-    if unit_index == 0 {
-        format!("{} {}", size, UNITS[unit_index])
-    } else {
-        format!("{:.1} {}", size_f, UNITS[unit_index])
+    // 可选：验证 Content_Types.xml 包含正确的 MIME 类型
+    if let Ok(mut content_types) = zip.by_name("[Content_Types].xml") {
+        let mut content = String::new();
+        if content_types.read_to_string(&mut content).is_ok() {
+            if !content.contains("application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml") {
+                return Err(DocxError::InvalidZipFormat);
+            }
+        }
     }
+    
+    Ok(())
 }
 
 /// 合并被XML标签分割的Handlebars语法
@@ -305,81 +275,79 @@ fn merge_three_part_pattern(content: &str, changed: &mut bool) -> String {
     result
 }
 
+/// 应用 Handlebars 模板引擎处理
+/// 将合并后的 XML 内容中的 Handlebars 语法替换为实际数据
+pub fn apply_handlebars_template(
+    template_content: &str,
+    data: &serde_json::Value,
+) -> Result<String, Box<dyn std::error::Error>> {
+    use handlebars::Handlebars;
+    
+    // 创建 Handlebars 引擎实例
+    let mut handlebars = Handlebars::new();
+    
+    // 配置 Handlebars
+    handlebars.set_strict_mode(false); // 允许未定义的变量
+    
+    // 注册一些常用的 helper 函数
+    register_basic_helpers(&mut handlebars)?;
+    
+    // 渲染模板
+    match handlebars.render_template(template_content, data) {
+        Ok(result) => Ok(result),
+        Err(e) => {
+            // 如果渲染失败，提供更详细的错误信息
+            Err(format!("Handlebars 模板渲染失败: {}", e).into())
+        }
+    }
+}
+
+/// 注册基础的 Handlebars helper 函数
+fn register_basic_helpers(handlebars: &mut handlebars::Handlebars) -> Result<(), Box<dyn std::error::Error>> {
+    use handlebars::handlebars_helper;
+    use serde_json::Value;
+    
+    // 注册 eq helper (相等比较)
+    handlebars_helper!(eq: |x: Value, y: Value| x == y);
+    handlebars.register_helper("eq", Box::new(eq));
+    
+    // 注册 ne helper (不等比较)  
+    handlebars_helper!(ne: |x: Value, y: Value| x != y);
+    handlebars.register_helper("ne", Box::new(ne));
+    
+    // 注册 gt helper (大于)
+    handlebars_helper!(gt: |x: i64, y: i64| x > y);
+    handlebars.register_helper("gt", Box::new(gt));
+    
+    // 注册 lt helper (小于)
+    handlebars_helper!(lt: |x: i64, y: i64| x < y);
+    handlebars.register_helper("lt", Box::new(lt));
+    
+    // 注册 upper helper (转大写)
+    handlebars_helper!(upper: |s: String| s.to_uppercase());
+    handlebars.register_helper("upper", Box::new(upper));
+    
+    // 注册 lower helper (转小写)
+    handlebars_helper!(lower: |s: String| s.to_lowercase());
+    handlebars.register_helper("lower", Box::new(lower));
+    
+    // 注册 len helper (数组/字符串长度)
+    handlebars_helper!(len: |x: Value| {
+        match x {
+            Value::Array(arr) => arr.len(),
+            Value::String(s) => s.len(),
+            Value::Object(obj) => obj.len(),
+            _ => 0
+        }
+    });
+    handlebars.register_helper("len", Box::new(len));
+    
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_validate_docx_format() {
-        let valid_zip_signature = [0x50, 0x4B, 0x03, 0x04];
-        assert!(validate_docx_format(&valid_zip_signature));
-        
-        let invalid_signature = [0x00, 0x00, 0x00, 0x00];
-        assert!(!validate_docx_format(&invalid_signature));
-        
-        let too_short = [0x50, 0x4B];
-        assert!(!validate_docx_format(&too_short));
-    }
-
-    #[test]
-    fn test_escape_xml() {
-        let input = r#"<tag attr="value">content & more</tag>"#;
-        let expected = "&lt;tag attr=&quot;value&quot;&gt;content &amp; more&lt;/tag&gt;";
-        assert_eq!(escape_xml(input), expected);
-    }
-
-    #[test]
-    fn test_unescape_xml() {
-        let input = "&lt;tag attr=&quot;value&quot;&gt;content &amp; more&lt;/tag&gt;";
-        let expected = r#"<tag attr="value">content & more</tag>"#;
-        assert_eq!(unescape_xml(input), expected);
-    }
-
-    #[test]
-    fn test_validate_handlebars_syntax() {
-        assert!(validate_handlebars_syntax("Hello {{name}}").is_ok());
-        assert!(validate_handlebars_syntax("{{#if condition}}yes{{/if}}").is_ok());
-        assert!(validate_handlebars_syntax("{{#each items}}{{name}}{{/each}}").is_ok());
-        
-        // 这个测试可能需要根据实际的 handlebars 实现调整
-        // assert!(validate_handlebars_syntax("{{#if}}").is_err());
-    }
-
-    #[test]
-    fn test_get_file_extension() {
-        assert_eq!(get_file_extension("test.docx"), Some("docx"));
-        assert_eq!(get_file_extension("file.txt"), Some("txt"));
-        assert_eq!(get_file_extension("noextension"), None);
-        assert_eq!(get_file_extension(""), None);
-    }
-
-    #[test]
-    fn test_is_valid_json() {
-        assert!(is_valid_json(r#"{"name": "test"}"#));
-        assert!(is_valid_json("[]"));
-        assert!(is_valid_json("null"));
-        assert!(!is_valid_json("invalid json"));
-        assert!(!is_valid_json("{"));
-    }
-
-    #[test]
-    fn test_bytes_to_hex() {
-        let bytes = vec![0x50, 0x4B, 0x03, 0x04];
-        assert_eq!(bytes_to_hex(&bytes), "504b0304");
-        
-        let empty: Vec<u8> = vec![];
-        assert_eq!(bytes_to_hex(&empty), "");
-    }
-
-    #[test]
-    fn test_format_file_size() {
-        assert_eq!(format_file_size(0), "0 B");
-        assert_eq!(format_file_size(512), "512 B");
-        assert_eq!(format_file_size(1024), "1.0 KB");
-        assert_eq!(format_file_size(1536), "1.5 KB");
-        assert_eq!(format_file_size(1048576), "1.0 MB");
-        assert_eq!(format_file_size(1073741824), "1.0 GB");
-    }
 
     #[test]
     fn test_merge_handlebars_syntax() {
@@ -414,5 +382,131 @@ mod tests {
         let mixed_content = r#"<w:p><w:t>员工姓名: {{employee.name}}</w:t></w:p><w:p><w:t>部门: {{</w:t><w:t>employee.department</w:t><w:t>}}</w:t></w:p>"#;
         let result_mixed = merge_handlebars_in_xml(mixed_content).unwrap();
         assert_eq!(result_mixed, r#"<w:p><w:t>员工姓名: {{employee.name}}</w:t></w:p><w:p><w:t>部门: {{employee.department}}</w:t></w:p>"#);
+    }
+    
+    #[test]
+    fn test_apply_handlebars_template() {
+        use serde_json::json;
+        
+        // 测试简单变量替换
+        let template = "Hello {{name}}, you are {{age}} years old.";
+        let data = json!({
+            "name": "张三",
+            "age": 25
+        });
+        
+        let result = apply_handlebars_template(template, &data).unwrap();
+        assert_eq!(result, "Hello 张三, you are 25 years old.");
+        
+        // 测试条件渲染
+        let conditional_template = "{{#if has_bonus}}奖金: ¥{{bonus_amount}}{{/if}}";
+        let data_with_bonus = json!({
+            "has_bonus": true,
+            "bonus_amount": 5000
+        });
+        
+        let result_with_bonus = apply_handlebars_template(conditional_template, &data_with_bonus).unwrap();
+        assert_eq!(result_with_bonus, "奖金: ¥5000");
+        
+        let data_no_bonus = json!({
+            "has_bonus": false,
+            "bonus_amount": 5000
+        });
+        
+        let result_no_bonus = apply_handlebars_template(conditional_template, &data_no_bonus).unwrap();
+        assert_eq!(result_no_bonus, "");
+        
+        // 测试循环渲染
+        let loop_template = "项目列表:{{#each projects}} - {{name}}{{/each}}";
+        let data_with_projects = json!({
+            "projects": [
+                {"name": "项目A"},
+                {"name": "项目B"},
+                {"name": "项目C"}
+            ]
+        });
+        
+        let result_projects = apply_handlebars_template(loop_template, &data_with_projects).unwrap();
+        assert_eq!(result_projects, "项目列表: - 项目A - 项目B - 项目C");
+    }
+    
+    #[test]
+    fn test_handlebars_helpers() {
+        use serde_json::json;
+        
+        // 测试 eq helper
+        let eq_template = "{{#if (eq status \"completed\")}}已完成{{else}}未完成{{/if}}";
+        let data = json!({"status": "completed"});
+        let result = apply_handlebars_template(eq_template, &data).unwrap();
+        assert_eq!(result, "已完成");
+        
+        // 测试 upper helper
+        let upper_template = "{{upper name}}";
+        let data = json!({"name": "hello world"});
+        let result = apply_handlebars_template(upper_template, &data).unwrap();
+        assert_eq!(result, "HELLO WORLD");
+        
+        // 测试 len helper
+        let len_template = "共有 {{len items}} 项";
+        let data = json!({"items": ["a", "b", "c"]});
+        let result = apply_handlebars_template(len_template, &data).unwrap();
+        assert_eq!(result, "共有 3 项");
+    }
+    
+    #[test]
+    fn test_complete_template_processing() {
+        use serde_json::json;
+        
+        // 测试简单的完整流程
+        let simple_split = r#"<w:t>员工姓名: {{</w:t><w:t>employee.name</w:t><w:t>}}</w:t>"#;
+        
+        let data = json!({
+            "employee": {
+                "name": "张三",
+                "department": "技术部"
+            }
+        });
+        
+        // 第一步：合并被分割的 Handlebars 语法
+        let merged = merge_handlebars_in_xml(simple_split).unwrap();
+        println!("合并后: {}", merged);
+        assert_eq!(merged, r#"<w:t>员工姓名: {{employee.name}}</w:t>"#);
+        
+        // 第二步：应用 Handlebars 模板渲染
+        let rendered = apply_handlebars_template(&merged, &data).unwrap();
+        println!("渲染后: {}", rendered);
+        assert_eq!(rendered, r#"<w:t>员工姓名: 张三</w:t>"#);
+        
+        // 测试更复杂的条件渲染
+        let conditional_template = "{{#if employee.has_bonus}}奖金: ¥{{employee.bonus_amount}}{{/if}}";
+        let data_with_bonus = json!({
+            "employee": {
+                "has_bonus": true,
+                "bonus_amount": 5000
+            }
+        });
+        
+        let rendered_conditional = apply_handlebars_template(conditional_template, &data_with_bonus).unwrap();
+        println!("条件渲染: {}", rendered_conditional);
+        assert_eq!(rendered_conditional, "奖金: ¥5000");
+    }
+    
+    #[test]
+    fn test_validate_docx_format() {
+        // 测试文件太小的情况
+        let small_file = vec![0u8; 10];
+        let result = validate_docx_format(&small_file);
+        assert!(matches!(result, Err(DocxError::FileTooSmall)));
+        
+        // 测试无效的 ZIP 签名
+        let invalid_file = vec![0u8; 100];
+        let result = validate_docx_format(&invalid_file);
+        assert!(matches!(result, Err(DocxError::InvalidZipSignature)));
+        
+        // 测试有效的 ZIP 签名但不是有效的 ZIP 文件
+        let mut fake_zip = vec![0x50, 0x4B, 0x03, 0x04]; // 有效的 ZIP 签名
+        fake_zip.extend(vec![0u8; 100]); // 添加一些无效的数据
+        let result = validate_docx_format(&fake_zip);
+        assert!(matches!(result, Err(DocxError::ZipReadError(_))));
     }
 }

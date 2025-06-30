@@ -8,8 +8,8 @@
 // 运行 `npm run build:jsr` 来构建包
 
 import {
-    DocxHandlebars,
-    init as initDocxHandlebars,
+    render,
+    default as init,
 } from "../pkg-jsr/mod.ts";
 
 async function denoExample() {
@@ -19,10 +19,7 @@ async function denoExample() {
         
         // 初始化 WASM 模块
         console.log("⚡ 初始化 WASM 模块...");
-        await initDocxHandlebars();
-        
-        // 创建处理器实例
-        const docxHandlebars = new DocxHandlebars();
+        await init();
         
         // 检查模板文件是否存在
         const templatePath = "./examples/template.docx";
@@ -38,20 +35,6 @@ async function denoExample() {
         if (!templateExists) {
             console.log("⚠️  模板文件不存在，创建示例说明...\n");
             console.log("要使用此示例，请：");
-            console.log("1. 创建一个包含以下内容的 DOCX 文件:");
-            console.log("   员工姓名: {{employee.name}}");
-            console.log("   部门: {{employee.department}}");
-            console.log("   入职日期: {{employee.hire_date}}");
-            console.log("   \n   项目经历:");
-            console.log("   {{#each projects}}");
-            console.log("   - {{name}}: {{description}} ({{status}})");
-            console.log("   {{/each}}");
-            console.log("   \n   {{#if employee.has_bonus}}");
-            console.log("   奖金: ¥{{employee.bonus_amount}}");
-            console.log("   {{/if}}");
-            console.log("\n2. 将文件保存为 examples/template.docx");
-            console.log("3. 重新运行此示例");
-            console.log("\n💡 运行命令: deno run --allow-read --allow-write examples/deno_example.ts\n");
             return;
         }
         
@@ -59,9 +42,7 @@ async function denoExample() {
         console.log("📖 读取模板文件...");
         const templateBytes = await Deno.readFile(templatePath);
         
-        // 加载模板
-        console.log("⚙️  加载模板...");
-        docxHandlebars.load_template(templateBytes);
+        console.log("⚙️  准备处理模板...");
         
         // 准备数据
         const data = {
@@ -125,24 +106,19 @@ async function denoExample() {
         console.log("📋 使用的数据:");
         console.log(JSON.stringify(data, null, 2));
         
-        // 提取模板变量
-        console.log("\n🔍 提取模板变量...");
-        const variablesJson = docxHandlebars.get_template_variables();
-        const variables = JSON.parse(variablesJson);
-        console.log("发现的模板变量:", variables);
-        
-        // 渲染模板
+        // 渲染模板 - 使用新的函数式 API
         console.log("\n🎨 渲染模板...");
-        const result = docxHandlebars.render(JSON.stringify(data));
+        const result = render(templateBytes, JSON.stringify(data));
         
         // 保存结果
         const outputPath = "./examples/output_deno.docx";
-        await Deno.writeFile(outputPath, result);
+        await Deno.writeFile(outputPath, new Uint8Array(result));
         
         console.log(`✅ 处理完成！结果已保存到: ${outputPath}`);
         console.log(`📁 文件大小: ${result.length} 字节`);
         
         console.log("\n🎉 Deno 示例执行完成！");
+        console.log("💡 提示: 新的函数式 API 更简洁，直接传入文件字节和数据即可！");
         
     } catch (error) {
         if (error instanceof Error) {
@@ -150,7 +126,13 @@ async function denoExample() {
 
             if (error.message.includes("Cannot resolve")) {
                 console.log("\n💡 提示: 请先构建 WASM 包:");
-                console.log("   wasm-pack build --target web --out-dir pkg");
+                console.log("   npm run build:jsr");
+            } else if (error.message.includes('文件大小不足')) {
+                console.log('\n💡 提示: 上传的文件太小，不是有效的 DOCX 文件');
+            } else if (error.message.includes('无效的 ZIP 签名')) {
+                console.log('\n💡 提示: 文件不是有效的 ZIP/DOCX 格式');
+            } else if (error.message.includes('缺少必需的 DOCX 文件')) {
+                console.log('\n💡 提示: 文件不包含必需的 DOCX 组件');
             }
         } else {
             console.error("❌ 错误:", error);

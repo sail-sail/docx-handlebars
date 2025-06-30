@@ -185,24 +185,24 @@
 
     <script type="module">
         // 注意：这里需要 WASM 包构建完成后才能正常工作
-        // 运行 `wasm-pack build --target web --out-dir pkg` 来构建包
+        // 运行 `npm run build:web` 来构建包
 
         let wasmModule = null;
-        let DocxHandlebars = null;
+        let render = null;
 
         async function initWasm() {
             try {
-                // 动态导入 WASM 模块
-                const module = await import('./pkg/docx_handlebars.js');
+                // 动态导入 WASM 模块 - 使用新的函数式 API
+                const module = await import('../pkg-npm/docx_handlebars.js');
                 await module.default(); // 初始化 WASM
-                DocxHandlebars = module.DocxHandlebars;
+                render = module.render;
                 wasmModule = module;
                 
                 showStatus('✅ WASM 模块加载成功！', 'success');
                 document.getElementById('processBtn').disabled = false;
             } catch (error) {
                 showStatus('❌ WASM 模块加载失败: ' + error.message + 
-                          '<br><small>请先运行 `wasm-pack build --target web --out-dir pkg` 构建 WASM 包</small>', 'error');
+                          '<br><small>请先运行 `npm run build:web` 构建 WASM 包</small>', 'error');
                 document.getElementById('processBtn').disabled = true;
             }
         }
@@ -239,45 +239,11 @@
         };
 
         window.extractVariables = async function() {
-            if (!DocxHandlebars) {
-                showStatus('❌ WASM 模块未加载', 'error');
-                return;
-            }
-
-            const fileInput = document.getElementById('templateFile');
-            const file = fileInput.files[0];
-
-            if (!file) {
-                showStatus('❌ 请先选择 DOCX 模板文件', 'error');
-                return;
-            }
-
-            try {
-                showLoading(true);
-                
-                const arrayBuffer = await file.arrayBuffer();
-                const bytes = new Uint8Array(arrayBuffer);
-                
-                const processor = new DocxHandlebars();
-                processor.load_template(bytes);
-                
-                const variablesJson = processor.get_template_variables();
-                const variables = JSON.parse(variablesJson);
-                
-                document.getElementById('variablesList').textContent = JSON.stringify(variables, null, 2);
-                document.getElementById('variables').style.display = 'block';
-                
-                showStatus(`✅ 提取到 ${variables.length} 个模板变量`, 'success');
-                
-            } catch (error) {
-                showStatus(`❌ 提取变量失败: ${error.message}`, 'error');
-            } finally {
-                showLoading(false);
-            }
+            showStatus('💡 提示: 新版本使用函数式 API，暂不支持单独提取变量功能。<br>请使用模板处理功能直接渲染文档。', 'info');
         };
 
         window.processTemplate = async function() {
-            if (!DocxHandlebars) {
+            if (!render) {
                 showStatus('❌ WASM 模块未加载', 'error');
                 return;
             }
@@ -300,14 +266,13 @@
                 const arrayBuffer = await file.arrayBuffer();
                 const bytes = new Uint8Array(arrayBuffer);
                 
-                const processor = new DocxHandlebars();
-                processor.load_template(bytes);
-                
                 const jsonData = document.getElementById('jsonData').value;
-                const result = processor.render(jsonData);
+                
+                // 使用新的函数式 API
+                const result = render(bytes, jsonData);
                 
                 // 创建下载链接
-                const blob = new Blob([result], { 
+                const blob = new Blob([new Uint8Array(result)], { 
                     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
                 });
                 const url = URL.createObjectURL(blob);
@@ -318,10 +283,21 @@
                 
                 document.getElementById('downloadSection').style.display = 'block';
                 
-                showStatus('✅ 模板处理完成！文件已准备下载。', 'success');
+                showStatus('✅ 模板处理完成！文件已准备下载。<br>💡 新版本使用函数式 API，处理更简洁！', 'success');
                 
             } catch (error) {
-                showStatus(`❌ 处理失败: ${error.message}`, 'error');
+                let errorMessage = `❌ 处理失败: ${error.message}`;
+                
+                // 添加特定错误的提示
+                if (error.message.includes('文件大小不足')) {
+                    errorMessage += '<br>💡 提示: 上传的文件太小，不是有效的 DOCX 文件';
+                } else if (error.message.includes('无效的 ZIP 签名')) {
+                    errorMessage += '<br>💡 提示: 文件不是有效的 ZIP/DOCX 格式';
+                } else if (error.message.includes('缺少必需的 DOCX 文件')) {
+                    errorMessage += '<br>💡 提示: 文件不包含必需的 DOCX 组件';
+                }
+                
+                showStatus(errorMessage, 'error');
             } finally {
                 showLoading(false);
             }

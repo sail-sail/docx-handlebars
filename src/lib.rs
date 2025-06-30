@@ -3,6 +3,11 @@ use wasm_bindgen::JsValue;
 
 pub mod template;
 pub mod utils;
+pub mod errors;
+
+// 重新导出常用的类型和函数
+pub use errors::DocxError;
+pub use template::render_handlebars;
 
 /// 当 `console_error_panic_hook` 功能启用时，我们可以调用 `set_panic_hook` 函数
 /// 至少一次在初始化过程中，以便在 panic 时获得更好的错误消息。

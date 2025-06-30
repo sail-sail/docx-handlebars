@@ -1,5 +1,5 @@
 // Extended test script to verify npm package functionality using ES modules
-import init, { DocxHandlebars } from 'docx-handlebars';
+import init, { render } from 'docx-handlebars';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -17,9 +17,7 @@ async function testDocumentProcessing() {
     await init(wasmBytes);
     console.log('✓ WASM module initialized synchronously');
     
-    // Create instance
-    const processor = new DocxHandlebars();
-    console.log('✓ DocxHandlebars instance created');
+    console.log('✓ render function imported');
     
     // Test template file path
     const templatePath = path.join(__dirname, '..', '..', 'examples', 'template.docx');
@@ -34,14 +32,6 @@ async function testDocumentProcessing() {
     // Load template
     const templateData = fs.readFileSync(templatePath);
     console.log('✓ Template file loaded, size:', templateData.length, 'bytes');
-    
-    // Load template into processor
-    processor.load_template(templateData);
-    console.log('✓ Template loaded into processor');
-    
-    // Get template variables
-    const variables = processor.get_template_variables();
-    console.log('✓ Template variables:', variables);
     
     // Test data for rendering
     const testData = {
@@ -102,21 +92,21 @@ async function testDocumentProcessing() {
         }
     };
     
-    // Render document
+    // Render document using new functional API
     console.log('🔄 Rendering document with test data...');
-    const renderedData = processor.render(JSON.stringify(testData));
+    const renderedData = render(new Uint8Array(templateData), JSON.stringify(testData));
     console.log('✓ Document rendered successfully, size:', renderedData.length, 'bytes');
     
     // Save output
     const outputPath = path.join(__dirname, 'test_output_npm.docx');
-    fs.writeFileSync(outputPath, renderedData);
+    fs.writeFileSync(outputPath, new Uint8Array(renderedData));
     console.log('✓ Output saved to:', outputPath);
     
     console.log('\n🎉 npm package test completed successfully!');
     console.log('📋 Test Summary:');
-    console.log('   - Instance creation: ✓');
+    console.log('   - WASM initialization: ✓');
+    console.log('   - Function import: ✓');
     console.log('   - Template loading: ✓');
-    console.log('   - Variable extraction: ✓');
     console.log('   - Document rendering: ✓');
     console.log('   - Output generation: ✓');
     

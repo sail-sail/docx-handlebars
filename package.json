@@ -1,6 +1,6 @@
 {
   "name": "docx-handlebars",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers",
   "main": "pkg-npm/docx_handlebars.js",
   "types": "pkg-npm/docx_handlebars.d.ts",
