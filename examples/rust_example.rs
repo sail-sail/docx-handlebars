@@ -4,16 +4,12 @@
  * 运行命令: cargo run --example rust_example
  */
 
-use docx_handlebars::{DocxProcessor, TemplateEngine};
+use docx_handlebars::template;
 use serde_json::json;
 use std::fs;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🦀 Rust Native DOCX Handlebars 处理示例\n");
-    
-    // 创建处理器实例
-    let mut processor = DocxProcessor::new();
-    let template_engine = TemplateEngine::new();
     
     // 检查模板文件是否存在
     let template_path = "./examples/template.docx";
@@ -38,10 +34,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 读取模板文件
     println!("📖 读取模板文件...");
     let template_bytes = fs::read(template_path)?;
-    
-    // 加载模板
-    println!("⚙️  加载模板...");
-    processor.load_from_bytes(&template_bytes)?;
     
     // 准备数据
     let data = json!({
@@ -105,20 +97,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("📋 使用的数据:");
     println!("{}", serde_json::to_string_pretty(&data)?);
     
-    // 提取模板变量
-    println!("\n🔍 提取模板变量...");
-    
-    // 获取文档内容进行变量提取
-    let document_xml = processor.get_content();
-    let variables = template_engine.extract_variables(document_xml)?;
-    println!("发现的模板变量: {:?}", variables);
-    
     // 渲染模板
     println!("\n🎨 渲染模板...");
-    let rendered_xml = template_engine.render_content(document_xml, &data)?;
-    
-    // 用渲染后的内容创建新的 DOCX
-    let result_bytes = processor.create_docx_with_content(&rendered_xml)?;
+    let result_bytes = template::render_handlebars(template_bytes, &data)?;
     
     // 保存结果
     let output_path = "./examples/output_rust.docx";
