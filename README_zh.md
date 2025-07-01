@@ -4,6 +4,8 @@
 [![Documentation](https://docs.rs/docx-handlebars/badge.svg)](https://docs.rs/docx-handlebars)
 [![License](https://img.shields.io/crates/l/docx-handlebars.svg)](https://github.com/sail-sail/docx-handlebars#license)
 
+中文文档 | [English](README.md)
+
 一个用于处理 DOCX 文件 Handlebars 模板的 Rust 库，支持多平台使用：
 - 🦀 Rust 原生
 - 🌐 WebAssembly (WASM)
@@ -40,13 +42,7 @@ npm install docx-handlebars
 ### Deno
 
 ```typescript
-import { render, init } from "https://deno.land/x/docx_handlebars/mod.ts";
-```
-
-### JSR
-
-```bash
-npx jsr add @sail/docx-handlebars
+import { render, init } from "jsr:@sail/docx-handlebars";
 ```
 
 ## 使用示例
@@ -375,30 +371,17 @@ node examples/node_example.js
 deno run --allow-read --allow-write examples/deno_example.ts
 
 # 浏览器示例
-# 启动本地服务器并打开 examples/browser_demo.html
+cd tests/npm_test
+node serve.js
+# 然后在浏览器中打开 http://localhost:8080
+# 选择 examples/template.docx 文件测试
 ```
 
 ## 技术特性
 
 ### 智能合并算法
 
-该库的核心创新是智能合并被 XML 标签分割的 Handlebars 语法。在 DOCX 文件中，当用户输入模板语法时，Word 可能会将其拆分成多个 XML 标签：
-
-**原始分割状态：**
-```xml
-<w:t>员工姓名: {{</w:t><w:t>employee.name</w:t><w:t>}}</w:t>
-```
-
-**智能合并后：**
-```xml
-<w:t>员工姓名: {{employee.name}}</w:t>
-```
-
-支持的合并模式：
-- 简单分割: `<w:t>{{</w:t><w:t>variable}}</w:t>`
-- 部分分割: `<w:t>{{part1</w:t><w:t>part2}}</w:t>`
-- 三段分割: `<w:t>{{</w:t><w:t>part1</w:t><w:t>part2}}</w:t>`
-- 复杂嵌套: `<w:t>prefix{{</w:t><w:t>content</w:t><w:t>}}suffix</w:t>`
+该库的核心创新是智能合并被 XML 标签分割的 Handlebars 语法。在 DOCX 文件中，当用户输入模板语法时，Word 可能会将其拆分成多个 XML 标签
 
 ### 文件验证
 
@@ -422,29 +405,6 @@ deno run --allow-read --allow-write examples/deno_example.ts
 
 本项目采用 MIT 许可证 - 详见 [LICENSE-MIT](LICENSE-MIT) 文件。
 
-## 贡献
-
-欢迎贡献代码！请查看我们的贡献指南：
-
-1. Fork 项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-## 更新日志
-
-### v0.1.6
-
-- ✨ **重大重构**: 采用函数式 API，更简洁易用
-- ✨ **智能合并**: 完善的 Handlebars 语法分割合并算法  
-- ✨ **文件验证**: 内置 DOCX 格式验证和错误处理
-- ✨ **错误处理**: 使用 thiserror 提供详细的错误信息
-- ✨ **Helper 函数**: 内置常用的 Handlebars helper
-- 🐛 **修复**: 多种边界情况和兼容性问题
-- 📚 **文档**: 全面更新文档和示例
-- 🧪 **测试**: 完整的测试覆盖和验证脚本
-
 ## 支持
 
 - 📚 [文档](https://docs.rs/docx-handlebars)
@@ -465,3 +425,7 @@ deno run --allow-read --allow-write examples/deno_example.ts
     <a href="https://github.com/sail-sail/docx-handlebars/discussions">💬 参与讨论</a>
   </p>
 </div>
+
+
+## 捐赠鼓励支持此项目,支付宝扫码:
+![捐赠鼓励支持此项目](https://ejsexcel.com/alipay.jpg)

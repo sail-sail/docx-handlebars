@@ -79,6 +79,38 @@ function addMainFieldToPackageJson(packageJsonPath) {
   }
 }
 
+function removeUnnecessaryFiles() {
+  console.log('\n🧹 Cleaning up unnecessary files...');
+  
+  // 删除 pkg-npm 下的 README.md
+  const npmReadmePath = 'pkg-npm/README.md';
+  try {
+    if (fs.existsSync(npmReadmePath)) {
+      fs.unlinkSync(npmReadmePath);
+      console.log('✓ Removed pkg-npm/README.md');
+    } else {
+      console.log('✓ pkg-npm/README.md not found, skipping');
+    }
+  } catch (error) {
+    console.error(`❌ Failed to remove ${npmReadmePath}:`, error.message);
+  }
+  
+  // 删除 pkg-jsr 下的 README.md 和 package.json
+  const jsrFilesToRemove = ['pkg-jsr/README.md', 'pkg-jsr/package.json'];
+  jsrFilesToRemove.forEach(filePath => {
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`✓ Removed ${filePath}`);
+      } else {
+        console.log(`✓ ${filePath} not found, skipping`);
+      }
+    } catch (error) {
+      console.error(`❌ Failed to remove ${filePath}:`, error.message);
+    }
+  });
+}
+
 // 构建 Rust 库
 runCommand('cargo build --release', 'Building Rust library');
 
@@ -98,12 +130,14 @@ ensureDir('pkg-jsr');
 // 复制必要文件到 pkg-jsr 目录
 console.log('\n📋 Copying additional files to JSR package...');
 copyFile('LICENSE-MIT', 'pkg-jsr/LICENSE-MIT', 'LICENSE-MIT');
-copyFile('README.md', 'pkg-jsr/README.md', 'README.md');
 
 console.log('✅ JSR package files are ready');
 
 // 清理自动生成的 .gitignore 文件
 removeGitignoreFiles(['pkg-npm', 'pkg-jsr']);
+
+// 删除不必要的文件
+removeUnnecessaryFiles();
 
 console.log('\n🎉 All builds completed successfully!');
 console.log('\n📁 Output directories:');
