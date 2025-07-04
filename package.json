@@ -1,6 +1,6 @@
 {
   "name": "docx-handlebars",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "description": "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers",
   "main": "pkg-npm/docx_handlebars.js",
   "types": "pkg-npm/docx_handlebars.d.ts",
@@ -11,6 +11,7 @@
     "build": "node tools/build.js",
     "build:npm": "wasm-pack build --target web --out-dir pkg-npm",
     "build:jsr": "wasm-pack build --target web --out-dir pkg-jsr",
+    "publish": "npm run publish:rust && npm run publish:npm && npm run publish:jsr",
     "publish:rust": "cargo publish --allow-dirty",
     "publish:npm": "cd pkg-npm && npm publish",
     "publish:jsr": "cd pkg-jsr && deno publish --allow-slow-types --allow-dirty",

@@ -174,7 +174,7 @@ dependencies = [
 
 [[package]]
 name = "docx-handlebars"
-version = "0.1.8"
+version = "0.2.0"
 dependencies = [
  "console_error_panic_hook",
  "handlebars",

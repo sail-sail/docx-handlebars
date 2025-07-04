@@ -133,5 +133,4 @@ console.log('  - npm: pkg-npm/ (supports both Node.js and browsers)');
 console.log('  - JSR: pkg-jsr/ (supports Deno and Node.js)');
 console.log('\n🚀 Ready for publishing!');
 console.log('\n📦 Publishing commands:');
-console.log('  npm: cd pkg-npm && npm publish');
-console.log('  JSR: cd pkg-jsr && deno publish');
+console.log('  npm run publish');
