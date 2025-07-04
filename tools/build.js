@@ -82,21 +82,8 @@ function addMainFieldToPackageJson(packageJsonPath) {
 function removeUnnecessaryFiles() {
   console.log('\n🧹 Cleaning up unnecessary files...');
   
-  // 删除 pkg-npm 下的 README.md
-  const npmReadmePath = 'pkg-npm/README.md';
-  try {
-    if (fs.existsSync(npmReadmePath)) {
-      fs.unlinkSync(npmReadmePath);
-      console.log('✓ Removed pkg-npm/README.md');
-    } else {
-      console.log('✓ pkg-npm/README.md not found, skipping');
-    }
-  } catch (error) {
-    console.error(`❌ Failed to remove ${npmReadmePath}:`, error.message);
-  }
-  
-  // 删除 pkg-jsr 下的 README.md 和 package.json
-  const jsrFilesToRemove = ['pkg-jsr/README.md', 'pkg-jsr/package.json'];
+  // 删除 pkg-jsr 下的 package.json
+  const jsrFilesToRemove = ['pkg-jsr/package.json'];
   jsrFilesToRemove.forEach(filePath => {
     try {
       if (fs.existsSync(filePath)) {
