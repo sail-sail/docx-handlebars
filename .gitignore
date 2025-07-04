@@ -30,7 +30,10 @@ output_*.docx
 *.temp
 
 # Editor backup
-*~
+**/~$*
 
 # Rust
 **/*.rs.bk
+
+examples/document.xml
+examples/document_output.xml

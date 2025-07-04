@@ -1,6 +1,6 @@
 {
   "name": "@sail/docx-handlebars",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "license": "MIT",
   "exports": "./mod.ts",
   "publish": {
