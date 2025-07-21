@@ -1,3 +1,4 @@
+use base64::{engine::general_purpose, Engine};
 /**
  * Rust native example for docx-handlebars
  * 
@@ -91,11 +92,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "report_date": "2025/6/26",
             "quarter": "2024 Q1",
             "version": "v1.0"
+        },
+        "image": {
+            "base64": general_purpose::STANDARD.encode(&fs::read("./examples/image.webp")?)
         }
     });
-    
-    println!("📋 使用的数据:");
-    println!("{}", serde_json::to_string_pretty(&data)?);
     
     // 渲染模板
     println!("\n🎨 渲染模板...");

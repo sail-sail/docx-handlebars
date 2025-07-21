@@ -12,6 +12,8 @@ import {
     default as init,
 } from "../pkg-jsr/mod.ts";
 
+import * as fs from "node:fs";
+
 async function denoExample() {
     console.log("🦕 Deno DOCX Handlebars 处理示例\n");
     
@@ -43,6 +45,10 @@ async function denoExample() {
         const templateBytes = await Deno.readFile(templatePath);
         
         console.log("⚙️  准备处理模板...");
+        
+        const imageBytes = await Deno.readFile('./examples/image.webp');
+        const imageBase64 = btoa(Array.from(imageBytes, byte => String.fromCharCode(byte)).join(''));
+
         
         // 准备数据
         const data = {
@@ -100,11 +106,11 @@ async function denoExample() {
                 report_date: new Date().toLocaleDateString("zh-CN"),
                 quarter: "2024 Q1",
                 version: "v1.0"
-            }
+            },
+            "image": {
+                "base64": imageBase64, // 图片的 Base64 编码
+            },
         };
-        
-        console.log("📋 使用的数据:");
-        console.log(JSON.stringify(data, null, 2));
         
         // 渲染模板 - 使用新的函数式 API
         console.log("\n🎨 渲染模板...");
@@ -121,22 +127,7 @@ async function denoExample() {
         console.log("💡 提示: 新的函数式 API 更简洁，直接传入文件字节和数据即可！");
         
     } catch (error) {
-        if (error instanceof Error) {
-            console.error("❌ 错误:", error.message);
-
-            if (error.message.includes("Cannot resolve")) {
-                console.log("\n💡 提示: 请先构建 WASM 包:");
-                console.log("   npm run build:jsr");
-            } else if (error.message.includes('文件大小不足')) {
-                console.log('\n💡 提示: 上传的文件太小，不是有效的 DOCX 文件');
-            } else if (error.message.includes('无效的 ZIP 签名')) {
-                console.log('\n💡 提示: 文件不是有效的 ZIP/DOCX 格式');
-            } else if (error.message.includes('缺少必需的 DOCX 文件')) {
-                console.log('\n💡 提示: 文件不包含必需的 DOCX 组件');
-            }
-        } else {
-            console.error("❌ 错误:", error);
-        }
+        console.error("❌ 错误:", error);
     }
 }
 

@@ -2,6 +2,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { fileURLToPath } = require("node:url");
+const fs = require("node:fs");
 
 // 注意：这个示例需要 WASM 包构建完成后才能运行
 // 运行 `npm run build:npm` 来构建 npm 包
@@ -32,6 +33,8 @@ async function nodeExample() {
         const templateBuffer = fs.readFileSync(templatePath);
         
         console.log('⚙️  准备处理模板...');
+        
+        const imageBase64 = fs.readFileSync(__dirname + '/image.webp').toString('base64');
         
         // 准备数据
         const data = {
@@ -89,11 +92,11 @@ async function nodeExample() {
                 "report_date": "2025/6/26",
                 "quarter": "2024 Q1",
                 "version": "v1.0"
-            }
+            },
+            "image": {
+                "base64": imageBase64, // 图片的 Base64 编码
+            },
         };
-        
-        console.log('📋 使用的数据:');
-        console.log(JSON.stringify(data, null, 2));
         
         // 渲染模板 - 使用新的函数式 API
         console.log('\n🎨 渲染模板...');

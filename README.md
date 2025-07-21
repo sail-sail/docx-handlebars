@@ -290,6 +290,9 @@ Skills Assessment:
 {{else}}
 📈 Performance Rating: Needs Improvement
 {{/if}}
+
+Image:
+{{image base64_image_data}}
 ```
 
 ## Error Handling
@@ -307,14 +310,8 @@ match render_handlebars(template_bytes, &data) {
         std::fs::write("output.docx", result)?;
     }
     Err(e) => match e.downcast_ref::<DocxError>() {
-        Some(DocxError::FileTooSmall) => {
-            eprintln!("Error: File too small, not a valid DOCX file");
-        }
-        Some(DocxError::InvalidZipSignature) => {
+        Some(DocxError::InvalidZipFormat) => {
             eprintln!("Error: File is not a valid ZIP/DOCX format");
-        }
-        Some(DocxError::MissingRequiredFile(filename)) => {
-            eprintln!("Error: Missing required DOCX file: {}", filename);
         }
         _ => {
             eprintln!("Other error: {}", e);
@@ -330,17 +327,7 @@ try {
     const result = render(templateBytes, JSON.stringify(data));
     console.log('Processing successful!');
 } catch (error) {
-    if (error.message.includes('File size insufficient')) {
-        console.error('File too small, not a valid DOCX file');
-    } else if (error.message.includes('Invalid ZIP signature')) {
-        console.error('File is not a valid ZIP/DOCX format');
-    } else if (error.message.includes('Missing required DOCX file')) {
-        console.error('File does not contain required DOCX components');
-    } else if (error.message.includes('Template rendering failed')) {
-        console.error('Handlebars template syntax error or data mismatch');
-    } else {
-        console.error('Processing failed:', error.message);
-    }
+    console.error('Processing failed:', error);
 }
 ```
 

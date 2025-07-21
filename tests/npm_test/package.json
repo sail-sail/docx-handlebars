@@ -11,6 +11,6 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "docx-handlebars": "0.2.0"
+    "docx-handlebars": "0.2.1"
   }
 }

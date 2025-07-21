@@ -307,14 +307,8 @@ match render_handlebars(template_bytes, &data) {
         std::fs::write("output.docx", result)?;
     }
     Err(e) => match e.downcast_ref::<DocxError>() {
-        Some(DocxError::FileTooSmall) => {
-            eprintln!("Error: File too small, not a valid DOCX file");
-        }
-        Some(DocxError::InvalidZipSignature) => {
+        Some(DocxError::InvalidZipFormat) => {
             eprintln!("Error: File is not a valid ZIP/DOCX format");
-        }
-        Some(DocxError::MissingRequiredFile(filename)) => {
-            eprintln!("Error: Missing required DOCX file: {}", filename);
         }
         _ => {
             eprintln!("Other error: {}", e);

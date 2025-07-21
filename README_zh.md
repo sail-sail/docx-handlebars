@@ -290,6 +290,9 @@ if (import.meta.main) {
 {{else}}
 📈 绩效评级: 需改进
 {{/if}}
+
+图片:
+{{image base64_image_data}}
 ```
 
 ## 错误处理
@@ -307,14 +310,8 @@ match render_handlebars(template_bytes, &data) {
         std::fs::write("output.docx", result)?;
     }
     Err(e) => match e.downcast_ref::<DocxError>() {
-        Some(DocxError::FileTooSmall) => {
-            eprintln!("错误: 文件太小，不是有效的 DOCX 文件");
-        }
-        Some(DocxError::InvalidZipSignature) => {
-            eprintln!("错误: 文件不是有效的 ZIP/DOCX 格式");
-        }
-        Some(DocxError::MissingRequiredFile(filename)) => {
-            eprintln!("错误: 缺少必需的 DOCX 文件: {}", filename);
+        Some(DocxError::InvalidZipFormat) => {
+            eprintln!("错误: 无效的 DOCX 文件格式");
         }
         _ => {
             eprintln!("其他错误: {}", e);
@@ -330,17 +327,7 @@ try {
     const result = render(templateBytes, JSON.stringify(data));
     console.log('处理成功！');
 } catch (error) {
-    if (error.message.includes('文件大小不足')) {
-        console.error('文件太小，不是有效的 DOCX 文件');
-    } else if (error.message.includes('无效的 ZIP 签名')) {
-        console.error('文件不是有效的 ZIP/DOCX 格式');
-    } else if (error.message.includes('缺少必需的 DOCX 文件')) {
-        console.error('文件不包含必需的 DOCX 组件');
-    } else if (error.message.includes('模板渲染失败')) {
-        console.error('Handlebars 模板语法错误或数据不匹配');
-    } else {
-        console.error('处理失败:', error.message);
-    }
+    console.error('处理失败:', error);
 }
 ```
 
