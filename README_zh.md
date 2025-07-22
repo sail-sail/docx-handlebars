@@ -292,7 +292,11 @@ if (import.meta.main) {
 {{/if}}
 
 图片:
-{{image base64_image_data}}
+{{img base64_image_data [width] [height]}}
+  只传 height：{{img base64 "" 200}}
+  只传 width：{{img base64 300}}
+  都不传：{{img base64}}
+  都传：{{img base64 300 200}}
 ```
 
 ## 错误处理

@@ -292,7 +292,11 @@ Skills Assessment:
 {{/if}}
 
 Image:
-{{image base64_image_data}}
+{{img base64_image_data [width] [height]}}
+  only height: {{img base64 "" 200}}
+  only width: {{img base64 300}}
+  no width/height: {{img base64}}
+  both width/height: {{img base64 300 200}}
 ```
 
 ## Error Handling

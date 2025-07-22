@@ -53,8 +53,8 @@ pub fn render_handlebars(
       register_basic_helpers(&mut handlebars)?;
       
       let files_ref = Arc::clone(&files);
-      // 注册 image helper
-      handlebars.register_helper("image", Box::new(
+      // 注册 img helper
+      handlebars.register_helper("img", Box::new(
         move |
           h: &handlebars::Helper,
           _r: &Handlebars,
@@ -67,6 +67,9 @@ pub fn render_handlebars(
             out.write("")?;
             return Ok(());
           }
+          let width_param = h.param(1).and_then(|v| v.value().as_u64());
+          let height_param = h.param(2).and_then(|v| v.value().as_u64());
+          
           let rid = Uuid::new_v4().to_string().replace("-", "");
           let rid = format!("a{rid}");
           let mut files_mut = files_ref.lock().map_err(|e| {
@@ -103,17 +106,33 @@ pub fn render_handlebars(
             })?;
             
             // 获取图片的宽高
-            let dimensions = get_image_dimensions(&image_data).ok_or_else(|| {
+            let (orig_w, orig_h) = get_image_dimensions(&image_data).ok_or_else(|| {
               RenderErrorReason::Other(format!("Failed to get image dimensions"))
             })?;
+            
+            // 计算目标宽高
+            let (target_w, target_h) = match (width_param, height_param) {
+              (Some(w), Some(h)) => (w as u32, h as u32),
+              (Some(w), None) => {
+                // 只传 width，等比缩放 height
+                let h = (orig_h as f64 * w as f64 / orig_w as f64).round() as u32;
+                (w as u32, h)
+              }
+              (None, Some(h)) => {
+                // 只传 height，等比缩放 width
+                let w = (orig_w as f64 * h as f64 / orig_h as f64).round() as u32;
+                (w, h as u32)
+              }
+              (None, None) => (orig_w, orig_h),
+            };
             
             files_mut.insert(file_name, image_data);
             
             let mut str = String::new();
             
             // 根据图片宽高计算 cx 和 cy
-            let cx = dimensions.0 * 9525; // 1px = 9525 EMU
-            let cy = dimensions.1 * 9525; // 1px = 9525 EMU
+            let cx = target_w * 9525; // 1px = 9525 EMU
+            let cy = target_h * 9525; // 1px = 9525 EMU
             
             str.push_str("<w:drawing>");
               str.push_str("<wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" wp14:anchorId=\"4A52EBB1\" wp14:editId=\"5A58C96F\">");
@@ -167,11 +186,18 @@ pub fn render_handlebars(
             let file_name = "[Content_Types].xml";
             if let Some(contents) = files_mut.remove(file_name) {
               let content_types_content = String::from_utf8(contents)?;
-              let new_content_types_content = content_types_content.replace(
-                "</Types>",
-                "<Default Extension=\"png\" ContentType=\"image/png\" /></Types>",
-              );
-              files_mut.insert(file_name.to_string(), new_content_types_content.into_bytes());
+              
+              if !content_types_content.contains(" Extension=\"png\" ") {
+                let new_content_types_content = content_types_content.replace(
+                  "</Types>",
+                  "<Default Extension=\"png\" ContentType=\"image/png\" /></Types>",
+                );
+                files_mut.insert(file_name.to_string(), new_content_types_content.into_bytes());
+              } else {
+                // 如果已经存在 png 的默认类型，则不重复添加
+                files_mut.insert(file_name.to_string(), content_types_content.into_bytes());
+              }
+              
             } else {
               // 如果没有找到 [Content_Types].xml 文件，则创建一个新的
               let new_content_types_content = format!(
