@@ -283,6 +283,9 @@ Skills Assessment:
 - {{name}}: {{level}}/10 ({{years}} years experience)
 {{/each}}
 
+To delete an entire table row, simply add the following to any cell in that row:
+{{removeTableRow}}
+
 {{#if (gt performance.score 90)}}
 🎉 Performance Rating: Excellent
 {{else if (gt performance.score 80)}}

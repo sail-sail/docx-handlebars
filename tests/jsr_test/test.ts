@@ -1,5 +1,5 @@
 // Comprehensive test for JSR package with actual file processing
-import { render, init } from "jsr:@sail/docx-handlebars@0.2.2";
+import { render, init } from "jsr:@sail/docx-handlebars@0.2.3";
 
 async function comprehensiveTest() {
   try {

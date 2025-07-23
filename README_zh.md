@@ -283,6 +283,10 @@ if (import.meta.main) {
 - {{name}}: {{level}}/10 ({{years}}年经验)
 {{/each}}
 
+在表格中若需要删除一整行, 只需要在任意单元格上添加:
+{{removeTableRow}}
+
+
 {{#if (gt performance.score 90)}}
 🎉 绩效评级: 优秀
 {{else if (gt performance.score 80)}}

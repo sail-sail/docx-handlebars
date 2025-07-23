@@ -1,6 +1,6 @@
 [package]
 name = "docx-handlebars"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["sail-sail <151263555@qq.com>"]
 description = "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers"
@@ -52,6 +52,7 @@ thiserror = "2.0.12"
 uuid = { version = "1.17.0", features = ["v4", "js"] }
 base64 = "0.22.1"
 # regex = "1.11.1"
+quick-xml = "0.38.0"
 
 # WASM dependencies
 wasm-bindgen = "0.2.100"

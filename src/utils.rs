@@ -1,10 +1,11 @@
 //! 实用工具函数
-
+use quick_xml::{Reader, Writer, events::Event};
+use std::io::{Cursor, Write};
 use crate::errors::DocxError;
 
 /// 验证 DOCX 文件格式
 /// 检查文件是否为有效的 ZIP 格式，并包含必需的 DOCX 文件结构
-pub fn validate_docx_format(file_data: &[u8]) -> Result<(), DocxError> {
+pub(crate) fn validate_docx_format(file_data: &[u8]) -> Result<(), DocxError> {
     // 检查文件大小
     if file_data.len() < 22 {
         return Err(DocxError::InvalidZipFormat);
@@ -39,7 +40,7 @@ pub fn validate_docx_format(file_data: &[u8]) -> Result<(), DocxError> {
 
 /// 合并被XML标签分割的Handlebars语法
 /// 这个函数会识别被分割的 Handlebars 表达式并将其合并
-pub fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box<dyn std::error::Error>> {
+pub(crate) fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box<dyn std::error::Error>> {
     
     // 判断如果 xml_content 中没有 { 字符, 则直接返回 xml_content 本身
     if !xml_content.contains('{') {
@@ -148,7 +149,7 @@ pub fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box<dyn st
 }
 
 /// 注册基础的 Handlebars helper 函数
-pub fn register_basic_helpers(handlebars: &mut handlebars::Handlebars) -> Result<(), Box<dyn std::error::Error>> {
+pub(crate) fn register_basic_helpers(handlebars: &mut handlebars::Handlebars) -> Result<(), Box<dyn std::error::Error>> {
     use handlebars::handlebars_helper;
     use serde_json::Value;
     
@@ -339,7 +340,7 @@ fn get_gif_dimensions(data: &[u8]) -> Option<(u32, u32)> {
 
 // 获取图片的宽高
 /// 支持 PNG, JPEG, WebP, BMP, TIFF, GIF 格式
-pub fn get_image_dimensions(data: &[u8]) -> Option<(u32, u32)> {
+pub(crate) fn get_image_dimensions(data: &[u8]) -> Option<(u32, u32)> {
     if let Some((w, h)) = get_png_dimensions(data) {
         Some((w, h))
     } else if let Some((w, h)) = get_jpeg_dimensions(data).map(|(w, h)| (w as u32, h as u32)) {
@@ -355,4 +356,135 @@ pub fn get_image_dimensions(data: &[u8]) -> Option<(u32, u32)> {
     } else {
         None
     }
+}
+
+// 更简化的实现方案
+pub(crate) fn remove_table_row_simple(xml_content: &str, target_uuid: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let mut reader = Reader::from_str(xml_content);
+    // reader.trim_text(true);
+    
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+    let mut buf = Vec::new();
+    
+    let mut current_row_content = String::new();
+    let mut in_table_row = false;
+    let mut row_depth = 0;
+    
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Start(ref e)) => {
+                if e.name().as_ref() == b"w:tr" {
+                    in_table_row = true;
+                    row_depth += 1;
+                    current_row_content.clear();
+                    current_row_content.push_str(&format!("<{}", String::from_utf8_lossy(e.name().as_ref())));
+                    // 添加属性
+                    for attr in e.attributes() {
+                        if let Ok(attr) = attr {
+                            current_row_content.push_str(&format!(" {}=\"{}\"", 
+                                String::from_utf8_lossy(attr.key.as_ref()),
+                                String::from_utf8_lossy(&attr.value)));
+                        }
+                    }
+                    current_row_content.push('>');
+                } else if in_table_row {
+                    current_row_content.push_str(&format!("<{}", String::from_utf8_lossy(e.name().as_ref())));
+                    // 添加属性
+                    for attr in e.attributes() {
+                        if let Ok(attr) = attr {
+                            current_row_content.push_str(&format!(" {}=\"{}\"", 
+                                String::from_utf8_lossy(attr.key.as_ref()),
+                                String::from_utf8_lossy(&attr.value)));
+                        }
+                    }
+                    current_row_content.push('>');
+                } else {
+                    writer.write_event(Event::Start(e.clone()))?;
+                }
+            }
+            Ok(Event::End(ref e)) => {
+                if e.name().as_ref() == b"w:tr" && in_table_row {
+                    row_depth -= 1;
+                    if row_depth == 0 {
+                        current_row_content.push_str(&format!("</{}>", String::from_utf8_lossy(e.name().as_ref())));
+                        
+                        // 检查当前行是否包含目标 UUID
+                        if !current_row_content.contains(target_uuid) {
+                            // 如果不包含目标 UUID，则写入这一行
+                            writer.get_mut().write_all(current_row_content.as_bytes())?;
+                        }
+                        // 如果包含目标 UUID，则跳过整行
+                        
+                        in_table_row = false;
+                        current_row_content.clear();
+                    } else {
+                        current_row_content.push_str(&format!("</{}>", String::from_utf8_lossy(e.name().as_ref())));
+                    }
+                } else if in_table_row {
+                    current_row_content.push_str(&format!("</{}>", String::from_utf8_lossy(e.name().as_ref())));
+                } else {
+                    writer.write_event(Event::End(e.clone()))?;
+                }
+            }
+            Ok(Event::Text(ref e)) => {
+                if in_table_row {
+                    let text = std::str::from_utf8(e)?;
+                    // let text = unescape(text)?;
+                    // current_row_content.push_str(&html_escape::encode_text(&text));
+                    current_row_content.push_str(text);
+                } else {
+                    writer.write_event(Event::Text(e.clone()))?;
+                }
+            }
+            Ok(Event::Empty(ref e)) => {
+                if in_table_row {
+                    current_row_content.push_str(&format!("<{}", String::from_utf8_lossy(e.name().as_ref())));
+                    for attr in e.attributes() {
+                        if let Ok(attr) = attr {
+                            current_row_content.push_str(&format!(" {}=\"{}\"", 
+                                String::from_utf8_lossy(attr.key.as_ref()),
+                                String::from_utf8_lossy(&attr.value)));
+                        }
+                    }
+                    current_row_content.push_str("/>");
+                } else {
+                    writer.write_event(Event::Empty(e.clone()))?;
+                }
+            }
+            Ok(Event::Comment(ref e)) => {
+                if !in_table_row {
+                    writer.write_event(Event::Comment(e.clone()))?;
+                }
+            }
+            Ok(Event::CData(ref e)) => {
+                if in_table_row {
+                    current_row_content.push_str(&format!("<![CDATA[{}]]>", String::from_utf8_lossy(&e)));
+                } else {
+                    writer.write_event(Event::CData(e.clone()))?;
+                }
+            }
+            Ok(Event::Decl(ref e)) => {
+                writer.write_event(Event::Decl(e.clone()))?;
+            }
+            Ok(Event::PI(ref e)) => {
+                if !in_table_row {
+                    writer.write_event(Event::PI(e.clone()))?;
+                }
+            }
+            Ok(Event::DocType(ref e)) => {
+                writer.write_event(Event::DocType(e.clone()))?;
+            }
+            Ok(Event::GeneralRef(ref e)) => {
+                if !in_table_row {
+                    writer.write_event(Event::GeneralRef(e.clone()))?;
+                }
+            }
+            Ok(Event::Eof) => break,
+            Err(e) => return Err(format!("Error at position {}: {:?}", reader.buffer_position(), e).into()),
+        }
+        buf.clear();
+    }
+    
+    let result = writer.into_inner().into_inner();
+    Ok(String::from_utf8(result)?)
 }

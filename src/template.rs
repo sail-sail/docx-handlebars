@@ -2,9 +2,9 @@ use serde_json::Value;
 use std::{io::{Cursor, Read, Write}, sync::{Arc, Mutex}};
 use zip::{ZipArchive, ZipWriter, write::SimpleFileOptions};
 use std::collections::HashMap;
-use crate::{utils::{get_image_dimensions, merge_handlebars_in_xml, register_basic_helpers, validate_docx_format}, DocxError};
+use crate::{utils::{get_image_dimensions, merge_handlebars_in_xml, register_basic_helpers, remove_table_row_simple, validate_docx_format}, DocxError};
 
-use handlebars::{Handlebars, RenderErrorReason};
+use handlebars::{Handlebars, RenderErrorReason, handlebars_helper};
 use uuid::Uuid;
 use base64::{Engine as _, engine::general_purpose};
 
@@ -211,6 +211,12 @@ pub fn render_handlebars(
         },
       ));
       
+      // 标记删除表格的一行
+      handlebars_helper!(removeTableRow: | | {
+        "d53e6de6-fb82-4ca8-95aa-2bc56b6d5791"
+      });
+      handlebars.register_helper("removeTableRow", Box::new(removeTableRow));
+      
       // 渲染模板
       let xml_content = handlebars.render_template(&xml_content, data)
         .map_err(|e| {
@@ -218,7 +224,7 @@ pub fn render_handlebars(
           DocxError::TemplateRenderError(reason.to_string())
         })?;
       
-      let xml_content = fix_drawing_with_placeholders(xml_content);
+      let xml_content = fix_drawing_with_placeholders(xml_content)?;
       
       // std::fs::write("./document.xml", &xml_content)?;
       
@@ -251,11 +257,16 @@ pub fn render_handlebars(
   Ok(output)
 }
 
-fn fix_drawing_with_placeholders(xml_content: String) -> String {
+fn fix_drawing_with_placeholders(xml_content: String) -> Result<String, Box<dyn std::error::Error>> {
   let mut fixed_content = xml_content;
   
   fixed_content = fixed_content.replace("<w:t><w:drawing>", "<w:drawing>");
   fixed_content = fixed_content.replace("</w:drawing></w:t>", "</w:drawing>");
   
-  fixed_content
+  fixed_content = remove_table_row_simple(
+    &fixed_content,
+    "d53e6de6-fb82-4ca8-95aa-2bc56b6d5791",
+  )?;
+  
+  Ok(fixed_content)
 }
