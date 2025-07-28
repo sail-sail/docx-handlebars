@@ -1,11 +1,11 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@sail/docx-handlebars@0.2.1": "0.2.3"
+    "jsr:@sail/docx-handlebars@0.2.1": "0.2.4"
   },
   "jsr": {
-    "@sail/docx-handlebars@0.2.3": {
-      "integrity": "386bb7419fed436ed83280506fc3bb6c1a3d4f5c29bd03627f0b69c6b697d005"
+    "@sail/docx-handlebars@0.2.4": {
+      "integrity": "239d9adccacbe666f618ced5832fb6ea647a75dca6d8e7e49e28036090568d95"
     }
   }
 }

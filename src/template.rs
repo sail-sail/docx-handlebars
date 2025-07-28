@@ -8,6 +8,8 @@ use handlebars::{Handlebars, RenderErrorReason, handlebars_helper};
 use uuid::Uuid;
 use base64::{Engine as _, engine::general_purpose};
 
+const REMOVE_TABLE_ROW_KEY: &str = "d53e6de6-fb82-4ca8-95aa-2bc56b6d5791";
+
 pub fn render_handlebars(
   zip_bytes: Vec<u8>,
   data: &Value,
@@ -34,13 +36,13 @@ pub fn render_handlebars(
     
     let mut contents = Vec::new();
     file.read_to_end(&mut contents)?;
-    files.lock().map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to lock files: {}", e))))?.insert(file_name, contents);
+    files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?.insert(file_name, contents);
   }
   
   // 处理 document.xml 文件
   {
     let file_name = "word/document.xml";
-    let contents = files.lock().map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to lock files: {}", e))))?.remove(file_name);
+    let contents = files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?.remove(file_name);
     if let Some(contents) = contents {
       let xml_content = String::from_utf8(contents.clone())?;
       
@@ -70,8 +72,28 @@ pub fn render_handlebars(
           let width_param = h.param(1).and_then(|v| v.value().as_u64());
           let height_param = h.param(2).and_then(|v| v.value().as_u64());
           
+          // 生成唯一的关系 ID 和图片 ID
           let rid = Uuid::new_v4().to_string().replace("-", "");
           let rid = format!("a{rid}");
+          
+          // 生成唯一的图片内部 ID（用于 docPr 和 cNvPr）
+          // 使用 UUID 的简单哈希作为数字 ID
+          let pic_id = {
+            let uuid = Uuid::new_v4();
+            let uuid_bytes = uuid.as_bytes();
+            let mut id = 0u32;
+            for (i, &byte) in uuid_bytes.iter().take(4).enumerate() {
+              id |= (byte as u32) << (i * 8);
+            }
+            (id % 899999999) + 100000000 // 确保是9位数
+          };
+          
+          // 生成唯一的锚点 ID
+          let anchor_id = Uuid::new_v4().to_string().replace("-", "").to_uppercase();
+          let anchor_id = &anchor_id[..8]; // 取前8位
+          let edit_id = Uuid::new_v4().to_string().replace("-", "").to_uppercase();
+          let edit_id = &edit_id[..8]; // 取前8位
+          
           let mut files_mut = files_ref.lock().map_err(|e| {
             RenderErrorReason::Other(e.to_string())
           })?;
@@ -102,12 +124,12 @@ pub fn render_handlebars(
             // std::fs::write(format!("D:/{rid}.base64"), &src)?;
             // src 是base64 编码的图片数据
             let image_data = general_purpose::STANDARD.decode(src).map_err(|e| {
-              RenderErrorReason::Other(format!("Failed to decode base64 image: {}", e))
+              RenderErrorReason::Other(format!("Failed to decode base64 image: {e}"))
             })?;
             
             // 获取图片的宽高
             let (orig_w, orig_h) = get_image_dimensions(&image_data).ok_or_else(|| {
-              RenderErrorReason::Other(format!("Failed to get image dimensions"))
+              RenderErrorReason::Other("Failed to get image dimensions".to_string())
             })?;
             
             // 计算目标宽高
@@ -135,11 +157,11 @@ pub fn render_handlebars(
             let cy = target_h * 9525; // 1px = 9525 EMU
             
             str.push_str("<w:drawing>");
-              str.push_str("<wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" wp14:anchorId=\"4A52EBB1\" wp14:editId=\"5A58C96F\">");
+              str.push_str(&format!("<wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" wp14:anchorId=\"{anchor_id}\" wp14:editId=\"{edit_id}\">"));
                 // str.push_str("<wp:extent cx=\"2216867\" cy=\"742950\" />");
                 str.push_str(&format!("<wp:extent cx=\"{cx}\" cy=\"{cy}\" />"));
                 str.push_str("<wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"0\" />");
-                str.push_str(&format!("<wp:docPr id=\"873087433\" name=\"{rid}\" />")); // 图片 1
+                str.push_str(&format!("<wp:docPr id=\"{pic_id}\" name=\"{rid}\" />")); // 图片 ID
                 str.push_str("<wp:cNvGraphicFramePr>");
                   str.push_str("<a:graphicFrameLocks xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" noChangeAspect=\"1\" />");
                 str.push_str("</wp:cNvGraphicFramePr>");
@@ -147,7 +169,7 @@ pub fn render_handlebars(
                   str.push_str("<a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">");
                     str.push_str("<pic:pic xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">");
                       str.push_str("<pic:nvPicPr>");
-                        str.push_str(&format!("<pic:cNvPr id=\"873087433\" name=\"{rid}\" />")); // 图片 873087433
+                        str.push_str(&format!("<pic:cNvPr id=\"{pic_id}\" name=\"{rid}\" />")); // 图片 ID
                         str.push_str("<pic:cNvPicPr />");
                       str.push_str("</pic:nvPicPr>");
                       str.push_str("<pic:blipFill>");
@@ -200,9 +222,7 @@ pub fn render_handlebars(
               
             } else {
               // 如果没有找到 [Content_Types].xml 文件，则创建一个新的
-              let new_content_types_content = format!(
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"png\" ContentType=\"image/png\" /></Types>",
-              );
+              let new_content_types_content = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"png\" ContentType=\"image/png\" /></Types>".to_string();
               files_mut.insert(file_name.to_string(), new_content_types_content.into_bytes());
             }
           }
@@ -211,9 +231,59 @@ pub fn render_handlebars(
         },
       ));
       
+      // 附件
+      /*
+      let files_ref = Arc::clone(&files);
+      handlebars.register_helper("att", Box::new(
+        move |
+          h: &handlebars::Helper,
+          _r: &Handlebars,
+          _ctx: &handlebars::Context,
+          _rc: &mut handlebars::RenderContext,
+          out: &mut dyn handlebars::Output
+        | -> Result<(), handlebars::RenderError> {
+          
+          let src = h.param(0).and_then(|v| v.value().as_str()).unwrap_or("");
+          if src.is_empty() {
+            out.write("")?;
+            return Ok(());
+          }
+          
+          let rid = Uuid::new_v4().to_string().replace("-", "");
+          let rid = format!("a{rid}");
+          let mut files_mut = files_ref.lock().map_err(|e| {
+            RenderErrorReason::Other(e.to_string())
+          })?;
+          
+          // word/_rels/document.xml.rels
+          {
+            let file_name = "word/_rels/document.xml.rels";
+            if let Some(contents) = files_mut.remove(file_name) {
+              let rels_content = String::from_utf8(contents)?;
+              let new_rels_content = rels_content.replace(
+                "</Relationships>",
+                &format!(
+                  "<Relationship Id=\"{rid}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"media/{rid}.png\"></Relationship></Relationships>",
+                ),
+              );
+              files_mut.insert(file_name.to_string(), new_rels_content.into_bytes());
+            } else {
+              // 如果没有找到关系文件，则创建一个新的
+              let new_rels_content = format!(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"{rid}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"media/{rid}.png\"></Relationship></Relationships>",
+              );
+              files_mut.insert("word/_rels/document.xml.rels".to_string(), new_rels_content.into_bytes());
+            }
+          }
+          
+          Ok(())
+        },
+      ));
+      */
+      
       // 标记删除表格的一行
       handlebars_helper!(removeTableRow: | | {
-        "d53e6de6-fb82-4ca8-95aa-2bc56b6d5791"
+        REMOVE_TABLE_ROW_KEY
       });
       handlebars.register_helper("removeTableRow", Box::new(removeTableRow));
       
@@ -228,12 +298,12 @@ pub fn render_handlebars(
       
       // std::fs::write("./document.xml", &xml_content)?;
       
-      files.lock().map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to lock files: {}", e))))?.insert(file_name.to_string(), xml_content.into_bytes());
+      files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?.insert(file_name.to_string(), xml_content.into_bytes());
     }
   }
   
   // Extract files from Arc<Mutex<_>>
-  let files = Arc::try_unwrap(files).map_err(|_| Box::new(std::io::Error::new(std::io::ErrorKind::Other, "Failed to unwrap Arc")))?.into_inner().map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get inner value: {:?}", e))))?;
+  let files = Arc::try_unwrap(files).map_err(|_| Box::new(std::io::Error::other("Failed to unwrap Arc")))?.into_inner().map_err(|e| Box::new(std::io::Error::other(format!("Failed to get inner value: {e:?}"))))?;
   
   // 重新压缩文件
   let mut output = Vec::new();
@@ -263,10 +333,12 @@ fn fix_drawing_with_placeholders(xml_content: String) -> Result<String, Box<dyn 
   fixed_content = fixed_content.replace("<w:t><w:drawing>", "<w:drawing>");
   fixed_content = fixed_content.replace("</w:drawing></w:t>", "</w:drawing>");
   
-  fixed_content = remove_table_row_simple(
-    &fixed_content,
-    "d53e6de6-fb82-4ca8-95aa-2bc56b6d5791",
-  )?;
+  if fixed_content.contains(REMOVE_TABLE_ROW_KEY) {
+    fixed_content = remove_table_row_simple(
+      &fixed_content,
+      REMOVE_TABLE_ROW_KEY,
+    )?;
+  }
   
   Ok(fixed_content)
 }

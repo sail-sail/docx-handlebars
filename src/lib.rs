@@ -1,9 +1,10 @@
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 
+pub mod errors;
+pub mod ole;
 pub mod template;
 pub mod utils;
-pub mod errors;
 
 // 重新导出常用的类型和函数
 pub use errors::DocxError;
@@ -23,7 +24,7 @@ pub fn render(
     data_json: &str,
 ) -> Result<JsValue, JsValue> {
     let data: serde_json::Value = serde_json::from_str(data_json)
-            .map_err(|e| JsValue::from_str(&format!("JSON 解析错误: {}", e)))?;
+            .map_err(|e| JsValue::from_str(&format!("JSON 解析错误: {e}")))?;
 
     // 调用模板渲染函数
     let result = template::render_handlebars(zip_bytes, &data)

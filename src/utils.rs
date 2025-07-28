@@ -39,113 +39,133 @@ pub(crate) fn validate_docx_format(file_data: &[u8]) -> Result<(), DocxError> {
 // }
 
 /// 合并被XML标签分割的Handlebars语法
-/// 这个函数会识别被分割的 Handlebars 表达式并将其合并
+/// 
+/// 这个函数会识别被XML标签分割的 Handlebars 表达式并将其合并。
+/// 例如: `<w:t>{</w:t><w:t>{name</w:t><w:t>}</w:t><w:t>}</w:t>` 
+/// 会被合并为: `{{name}}`
+/// 
+/// 使用 quick_xml 进行更可靠的XML解析，能正确处理各种XML结构
 pub(crate) fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box<dyn std::error::Error>> {
-    
-    // 判断如果 xml_content 中没有 { 字符, 则直接返回 xml_content 本身
+    // 快速检查：如果内容中没有大括号，直接返回原内容
     if !xml_content.contains('{') {
         return Ok(xml_content);
     }
     
-    let len = xml_content.len();
-    let chars = xml_content.chars();
+    // 创建XML阅读器和写入器
+    let mut reader = Reader::from_str(&xml_content);
+    let mut writer = Writer::new(Cursor::new(Vec::new()));
+    let mut buf = Vec::new();
     
-    // 是否在尖括号中间
-    let mut is_in_angle = false;
+    // 用于累积文本内容的缓冲区
+    let mut text_buffer = String::new();
     
-    // 尖括号中间的内容
-    let mut angle_content = vec![];
-    // 尖括号外面的内容
-    let mut text_content = vec![];
+    // 跟踪大括号状态
+    let mut brace_count = 0;        // 当前大括号的数量
+    let mut in_handlebars = false;  // 是否在完整的 handlebars 表达式中 (如 {{...}})
     
-    let mut contents: Vec<(String, u8)> = vec![];
-    
-    for c in chars.into_iter() {
-        
-        if c == '<' {
-            is_in_angle = true;
-            angle_content.push(c);
-            if text_content.len() > 0 {
-                contents.push((text_content.iter().collect::<String>(), 0_u8));
-                text_content = vec![];
+    loop {
+        match reader.read_event_into(&mut buf) {
+            // 处理文本节点
+            Ok(Event::Text(ref e)) => {
+                let text = std::str::from_utf8(e)?;
+                
+                // 逐字符分析文本，统计大括号
+                for ch in text.chars() {
+                    if ch == '{' {
+                        brace_count += 1;
+                        // 当遇到连续的两个 { 时，标记进入 handlebars 表达式
+                        if brace_count >= 2 {
+                            in_handlebars = true;
+                        }
+                    } else if ch == '}' {
+                        if brace_count > 0 {
+                            brace_count -= 1;
+                        }
+                        // 当大括号数量归零时，标记退出 handlebars 表达式
+                        if brace_count == 0 {
+                            in_handlebars = false;
+                        }
+                    }
+                }
+                
+                // 将当前文本添加到缓冲区
+                text_buffer.push_str(text);
+                
+                // 如果不在 handlebars 表达式中且大括号已平衡，输出缓冲的文本
+                if !in_handlebars && brace_count == 0
+                    && !text_buffer.is_empty() {
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        text_buffer.clear();
+                    }
+                // 否则继续累积文本，等待 handlebars 表达式完整
             }
-            continue;
-        }
-        
-        if c == '>' {
-            angle_content.push(c);
-            is_in_angle = false;
-            contents.push((angle_content.iter().collect::<String>(), 1_u8));
-            angle_content = vec![];
-            continue;
-        }
-        
-        if is_in_angle {
-            angle_content.push(c);
-            continue;
-        }
-        
-        text_content.push(c);
-        
-    }
-    
-    let mut result: String = String::with_capacity(len);
-    
-    // 大括号的数量
-    let mut in_braces_num: i32 = 0;
-    
-    for (i, (part, ty)) in contents
-      .iter()
-      .enumerate()
-    {
-        if *ty == 0_u8 {
-            // 如果上一个是开始标签, 下一个也是开始标签, 忽略
-            // 上一个是结束标签, 下一个也是结束标签, 忽略
-            if i > 0 && i < contents.len() - 1 && contents[i - 1].1 == 1_u8 && contents[i + 1].1 == 1_u8 {
-                if !contents[i - 1].0.starts_with("</") && !contents[i + 1].0.starts_with("</") {
-                    continue;
+            
+            // 处理开始标签 (如 <w:t>)
+            Ok(Event::Start(ref e)) => {
+                // 如果在 handlebars 表达式中，跳过XML标签，只保留文本内容
+                if !in_handlebars && brace_count == 0 {
+                    // 先输出之前缓冲的文本
+                    if !text_buffer.is_empty() {
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        text_buffer.clear();
+                    }
+                    // 输出开始标签
+                    writer.write_event(Event::Start(e.clone()))?;
                 }
-                if contents[i - 1].0.starts_with("</") && contents[i + 1].0.starts_with("</") {
-                    continue;
-                }
-                // 如果上一个标签名称和下一个标签名称剔除掉 < 跟 </ 之后不相同, 忽略
-                
-                let prev_tag_name = contents[i - 1].0
-                  .trim_start_matches('<')
-                  .trim_end_matches('>')
-                  .split_whitespace()
-                  .next()
-                  .unwrap_or("");
-                
-                let next_tag_name = contents[i + 1].0
-                  .trim_start_matches('<')
-                  .trim_end_matches('>')
-                  .split_whitespace()
-                  .next()
-                  .unwrap_or("");
-                
-                if prev_tag_name == next_tag_name || prev_tag_name != next_tag_name.trim_start_matches('/') {
-                    continue;
+                // 在 handlebars 表达式中时，忽略XML标签，这样就实现了"合并"效果
+            }
+            
+            // 处理结束标签 (如 </w:t>)
+            Ok(Event::End(ref e)) => {
+                // 如果在 handlebars 表达式中，跳过XML标签
+                if !in_handlebars && brace_count == 0 {
+                    // 先输出之前缓冲的文本
+                    if !text_buffer.is_empty() {
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        text_buffer.clear();
+                    }
+                    // 输出结束标签
+                    writer.write_event(Event::End(e.clone()))?;
                 }
             }
             
-            for c in part.chars() {
-                if c == '{' {
-                    in_braces_num += 1;
-                } else if c == '}' {
-                    in_braces_num -= 1;
+            // 处理自闭合标签 (如 <w:br/>)
+            Ok(Event::Empty(ref e)) => {
+                if !in_handlebars && brace_count == 0 {
+                    if !text_buffer.is_empty() {
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        text_buffer.clear();
+                    }
+                    writer.write_event(Event::Empty(e.clone()))?;
                 }
             }
-            result.push_str(&part);
-            continue;
+            
+            // 处理其他XML事件（注释、CDATA、处理指令等）
+            Ok(Event::Eof) => break,
+            Ok(event) => {
+                if !in_handlebars && brace_count == 0 {
+                    if !text_buffer.is_empty() {
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        text_buffer.clear();
+                    }
+                    writer.write_event(event)?;
+                }
+            }
+            
+            // XML解析错误
+            Err(e) => return Err(format!("XML解析错误 at position {}: {:?}", reader.buffer_position(), e).into()),
         }
-        if in_braces_num == 0 {
-            result.push_str(&part);
-            continue;
-        }
+        buf.clear();
     }
     
-    Ok(result)
+    // 输出剩余的文本缓冲（如果有的话）
+    if !text_buffer.is_empty() {
+        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+    }
+    
+    // 将结果转换为字符串返回
+    let result = writer.into_inner().into_inner();
+    Ok(String::from_utf8(result)?)
 }
 
 /// 注册基础的 Handlebars helper 函数
@@ -361,7 +381,6 @@ pub(crate) fn get_image_dimensions(data: &[u8]) -> Option<(u32, u32)> {
 // 更简化的实现方案
 pub(crate) fn remove_table_row_simple(xml_content: &str, target_uuid: &str) -> Result<String, Box<dyn std::error::Error>> {
     let mut reader = Reader::from_str(xml_content);
-    // reader.trim_text(true);
     
     let mut writer = Writer::new(Cursor::new(Vec::new()));
     let mut buf = Vec::new();
@@ -458,7 +477,7 @@ pub(crate) fn remove_table_row_simple(xml_content: &str, target_uuid: &str) -> R
             }
             Ok(Event::CData(ref e)) => {
                 if in_table_row {
-                    current_row_content.push_str(&format!("<![CDATA[{}]]>", String::from_utf8_lossy(&e)));
+                    current_row_content.push_str(&format!("<![CDATA[{}]]>", String::from_utf8_lossy(e)));
                 } else {
                     writer.write_event(Event::CData(e.clone()))?;
                 }
