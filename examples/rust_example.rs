@@ -94,7 +94,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "version": "v1.0"
         },
         "image": {
-            "base64": general_purpose::STANDARD.encode(&fs::read("./examples/image.webp")?)
+            "base64": general_purpose::STANDARD.encode(&fs::read("./examples/image.webp")?),
+            "image_anchor": general_purpose::STANDARD.encode(&fs::read("./examples/label_adopt.png")?),
+            "options": {
+                "anchor": true, // 是否使用锚点定位
+                "position_h": 40, // 水平偏移，单位为像素（负值表示向左偏移）
+                "position_v": -14 // 垂直偏移，单位为像素（负值表示向上偏移）
+            }
         }
     });
     

@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 
 pub mod errors;
+pub mod imagesize;
 pub mod ole;
 pub mod template;
 pub mod utils;

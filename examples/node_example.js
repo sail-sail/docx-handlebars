@@ -1,8 +1,6 @@
 // Node.js example for docx-handlebars
 const fs = require("node:fs");
 const path = require("node:path");
-const { fileURLToPath } = require("node:url");
-const fs = require("node:fs");
 
 // 注意：这个示例需要 WASM 包构建完成后才能运行
 // 运行 `npm run build:npm` 来构建 npm 包
@@ -35,6 +33,7 @@ async function nodeExample() {
         console.log('⚙️  准备处理模板...');
         
         const imageBase64 = fs.readFileSync(__dirname + '/image.webp').toString('base64');
+        const image_anchor = fs.readFileSync(__dirname + '/label_adopt.png').toString('base64');
         
         // 准备数据
         const data = {
@@ -95,6 +94,12 @@ async function nodeExample() {
             },
             "image": {
                 "base64": imageBase64, // 图片的 Base64 编码
+                "image_anchor": image_anchor, // 锚点图片的 Base64 编码
+                "options": {
+                    "anchor": true, // 是否使用锚点定位
+                    "position_h": 40, // 水平偏移，单位为像素（负值表示向左偏移）
+                    "position_v": -14 // 垂直偏移，单位为像素（负值表示向上偏移）
+                }
             },
         };
         

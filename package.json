@@ -1,6 +1,6 @@
 {
   "name": "docx-handlebars",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers",
   "main": "pkg-npm/docx_handlebars.js",
   "types": "pkg-npm/docx_handlebars.d.ts",
@@ -41,7 +41,7 @@
   },
   "homepage": "https://github.com/sail-sail/docx-handlebars#readme",
   "devDependencies": {
-    "rimraf": "^5.0.0"
+    "rimraf": "6.0.1"
   },
   "engines": {
     "node": ">=16.0.0"

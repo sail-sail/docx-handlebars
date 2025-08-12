@@ -48,6 +48,9 @@ async function denoExample() {
         
         const imageBytes = await Deno.readFile('./examples/image.webp');
         const imageBase64 = btoa(Array.from(imageBytes, byte => String.fromCharCode(byte)).join(''));
+        
+        const image_anchorBytes = await Deno.readFile('./examples/label_adopt.png');
+        const image_anchor = btoa(Array.from(image_anchorBytes, byte => String.fromCharCode(byte)).join(''));
 
         
         // 准备数据
@@ -109,6 +112,12 @@ async function denoExample() {
             },
             "image": {
                 "base64": imageBase64, // 图片的 Base64 编码
+                "image_anchor": image_anchor, // 锚点图片的 Base64 编码
+                "options": {
+                    "anchor": true, // 是否使用锚点定位
+                    "position_h": 40, // 水平偏移，单位为像素（负值表示向左偏移）
+                    "position_v": -14 // 垂直偏移，单位为像素（负值表示向上偏移）
+                }
             },
         };
         

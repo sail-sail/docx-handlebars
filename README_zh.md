@@ -252,6 +252,11 @@ if (import.meta.main) {
 {{#if (eq status "completed")}}已完成{{/if}}    <!-- 相等比较 -->
 {{#if (gt score 90)}}优秀{{/if}}               <!-- 大于比较 -->
 {{#if (lt age 30)}}年轻{{/if}}                 <!-- 小于比较 -->
+
+<!-- 图片插入 -->
+{{img base64_data}}                    <!-- 嵌入式图片 -->
+{{img base64_data 300 200}}           <!-- 指定宽高的嵌入式图片 -->
+{{img base64_data 300 200 options}}   <!-- 带定位选项的浮动图片 -->
 ```
 
 ### 复杂示例
@@ -296,11 +301,29 @@ if (import.meta.main) {
 {{/if}}
 
 图片:
-{{img base64_image_data [width] [height]}}
+{{img base64_image_data [width] [height] [options]}}
   只传 height：{{img base64 "" 200}}
   只传 width：{{img base64 300}}
   都不传：{{img base64}}
   都传：{{img base64 300 200}}
+  
+  浮动图片示例：
+  {{img base64 200 100 options}}
+  
+  其中 options 可以是：
+  {
+    "anchor": true,          // 是否使用锚点定位（浮动图片）
+    "behind_doc": false,     // 图片是否在文字下方（false=覆盖文字，true=文字覆盖图片）
+    "allow_overlap": true,   // 是否允许与其他对象重叠
+    "position_h": 40,        // 水平偏移，单位为像素（负值表示向左偏移）
+    "position_v": -14        // 垂直偏移，单位为像素（负值表示向上偏移）
+  }
+  
+  图片定位说明：
+  - anchor: false（默认）- 嵌入式图片，随文字流动
+  - anchor: true - 浮动图片，可自由定位和覆盖文字
+  - position_h/position_v: 不传参数时，默认使用图片尺寸的一半作为偏移量实现居中
+  - 支持负数偏移，实现精确的图片定位
 ```
 
 ## 错误处理

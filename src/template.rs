@@ -2,7 +2,8 @@ use serde_json::Value;
 use std::{io::{Cursor, Read, Write}, sync::{Arc, Mutex}};
 use zip::{ZipArchive, ZipWriter, write::SimpleFileOptions};
 use std::collections::HashMap;
-use crate::{utils::{get_image_dimensions, merge_handlebars_in_xml, register_basic_helpers, remove_table_row_simple, validate_docx_format}, DocxError};
+use crate::{utils::{merge_handlebars_in_xml, register_basic_helpers, remove_table_row_simple, validate_docx_format}, DocxError};
+use crate::imagesize::get_image_dimensions;
 
 use handlebars::{Handlebars, RenderErrorReason, handlebars_helper};
 use uuid::Uuid;
@@ -71,6 +72,69 @@ pub fn render_handlebars(
           }
           let width_param = h.param(1).and_then(|v| v.value().as_u64());
           let height_param = h.param(2).and_then(|v| v.value().as_u64());
+          
+          let width_param = width_param.and_then(|w| if w > 0 { Some(w) } else { None });
+          let height_param = height_param.and_then(|h| if h > 0 { Some(h) } else { None });
+          
+          let options = h.param(3).map(|v| v.value());
+          
+          // 支持两种方式传递 options：
+          // 1. 直接传对象：image.options
+          // 2. 传 JSON 字符串：'{"anchor":true,"behind_doc":false}'
+          let parsed_json;
+          let options = if let Some(opt) = options {
+            if opt.is_object() {
+              // 已经是对象，直接使用
+              Some(opt)
+            } else if let Some(json_str) = opt.as_str() {
+              // 是字符串，尝试解析为 JSON
+              parsed_json = serde_json::from_str::<serde_json::Value>(json_str).ok();
+              parsed_json.as_ref()
+            } else {
+              None
+            }
+          } else {
+            None
+          };
+          
+          let options_anchor = options.and_then(|o|
+            o.get("anchor")
+             .map(|v| v.as_bool())
+          );
+          // 是否是浮动图片, 默认为 false
+          let options_anchor = options_anchor.unwrap_or_default().unwrap_or_default();
+          // 图片是否覆盖文字
+          let options_behind_doc = options.and_then(|o|
+            o.get("behind_doc")
+              .map(|v| v.as_bool())
+              .unwrap_or_default()
+          ).unwrap_or_default();
+          let behind_doc = if options_behind_doc {
+            "1"
+          } else {
+            "0"
+          };
+          // allowOverlap 是否允许与其他对象重叠
+          let options_allow_overlap = options.and_then(|o|
+            o.get("allow_overlap")
+              .map(|v| v.as_bool())
+              .unwrap_or(Some(true))
+          ).unwrap_or(true);
+          let allow_overlap = if options_allow_overlap {
+            "1"
+          } else {
+            "0"
+          };
+          
+          let options_position_h = options.and_then(|o|
+            o.get("position_h")
+              .and_then(|v| v.as_i64())
+          );
+          
+          let options_position_v = options.and_then(|o|
+            o.get("position_v")
+              .and_then(|v| v.as_i64())
+          );
           
           // 生成唯一的关系 ID 和图片 ID
           let rid = Uuid::new_v4().to_string().replace("-", "");
@@ -156,11 +220,42 @@ pub fn render_handlebars(
             let cx = target_w * 9525; // 1px = 9525 EMU
             let cy = target_h * 9525; // 1px = 9525 EMU
             
+            // 计算位置偏移（仅对 anchor 模式有效）
+            let position_h = if let Some(h) = options_position_h {
+                h as i64 * 9525 // 用户传入像素，转换为 EMU（支持负数）
+            } else {
+                -((target_w as i64 / 2) * 9525) // 默认使用图片宽度一半的负值，实现居中效果
+            };
+            
+            let position_v = if let Some(v) = options_position_v {
+                v as i64 * 9525 // 用户传入像素，转换为 EMU（支持负数）
+            } else {
+                -((target_h as i64 / 2) * 9525) // 默认使用图片高度一半的负值，实现居中效果
+            };
+            
+            // let position_h = 0;
+            // let position_v = 0;
+            
+            str.push_str("</w:t></w:r>");
+            str.push_str("<w:r>");
             str.push_str("<w:drawing>");
-              str.push_str(&format!("<wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" wp14:anchorId=\"{anchor_id}\" wp14:editId=\"{edit_id}\">"));
-                // str.push_str("<wp:extent cx=\"2216867\" cy=\"742950\" />");
+              if !options_anchor {
+                str.push_str(&format!("<wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" wp14:anchorId=\"{anchor_id}\" wp14:editId=\"{edit_id}\">"));
+              } else {
+                str.push_str(&format!("<wp:anchor distT=\"0\" distB=\"0\" distL=\"114300\" distR=\"114300\" simplePos=\"0\" relativeHeight=\"251658240\" behindDoc=\"{behind_doc}\" locked=\"0\" layoutInCell=\"1\" allowOverlap=\"{allow_overlap}\" wp14:anchorId=\"{anchor_id}\" wp14:editId=\"{edit_id}\">"));
+                str.push_str("<wp:simplePos x=\"0\" y=\"0\" />");
+                str.push_str("<wp:positionH relativeFrom=\"column\">");
+                  str.push_str(&format!("<wp:posOffset>{position_h}</wp:posOffset>"));
+                str.push_str("</wp:positionH>");
+                str.push_str("<wp:positionV relativeFrom=\"paragraph\">");
+                  str.push_str(&format!("<wp:posOffset>{position_v}</wp:posOffset>"));
+                str.push_str("</wp:positionV>");
+              }
                 str.push_str(&format!("<wp:extent cx=\"{cx}\" cy=\"{cy}\" />"));
                 str.push_str("<wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"0\" />");
+                if options_anchor {
+                  str.push_str("<wp:wrapNone />");
+                }
                 str.push_str(&format!("<wp:docPr id=\"{pic_id}\" name=\"{rid}\" />")); // 图片 ID
                 str.push_str("<wp:cNvGraphicFramePr>");
                   str.push_str("<a:graphicFrameLocks xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" noChangeAspect=\"1\" />");
@@ -197,8 +292,15 @@ pub fn render_handlebars(
                     str.push_str("</pic:pic>");
                   str.push_str("</a:graphicData>");
                 str.push_str("</a:graphic>");
-              str.push_str("</wp:inline>");
+              if !options_anchor {
+                str.push_str("</wp:inline>");
+              } else {
+                str.push_str("</wp:anchor>");
+              }
             str.push_str("</w:drawing>");
+            str.push_str("</w:r>");
+            str.push_str("<w:r>");
+            str.push_str("<w:t>");
           
             out.write(&str)?;
           }

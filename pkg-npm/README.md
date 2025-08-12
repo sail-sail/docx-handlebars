@@ -252,6 +252,11 @@ Built-in helper functions:
 {{#if (eq status "completed")}}Completed{{/if}}    <!-- Equality comparison -->
 {{#if (gt score 90)}}Excellent{{/if}}              <!-- Greater than comparison -->
 {{#if (lt age 30)}}Young{{/if}}                    <!-- Less than comparison -->
+
+<!-- Image insertion -->
+{{img base64_data}}                    <!-- Inline image -->
+{{img base64_data 300 200}}           <!-- Inline image with specified dimensions -->
+{{img base64_data 300 200 options}}   <!-- Floating image with positioning options -->
 ```
 
 ### Complex Example
@@ -295,11 +300,29 @@ To delete an entire table row, simply add the following to any cell in that row:
 {{/if}}
 
 Image:
-{{img base64_image_data [width] [height]}}
+{{img base64_image_data [width] [height] [options]}}
   only height: {{img base64 "" 200}}
   only width: {{img base64 300}}
   no width/height: {{img base64}}
   both width/height: {{img base64 300 200}}
+  
+  Floating image example:
+  {{img base64 200 100 options}}
+  
+  Where options can be:
+  {
+    "anchor": true,          // Whether to use anchor positioning (floating image)
+    "behind_doc": false,     // Whether image is behind text (false=overlay text, true=text overlays image)
+    "allow_overlap": true,   // Whether to allow overlap with other objects
+    "position_h": 40,        // Horizontal offset in pixels (negative values shift left)
+    "position_v": -14        // Vertical offset in pixels (negative values shift up)
+  }
+  
+  Image positioning guide:
+  - anchor: false (default) - Inline image, flows with text
+  - anchor: true - Floating image, can be freely positioned and overlay text
+  - position_h/position_v: When not provided, defaults to half the image size for centering
+  - Supports negative offsets for precise image positioning
 ```
 
 ## Error Handling
