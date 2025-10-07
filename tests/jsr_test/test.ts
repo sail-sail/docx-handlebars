@@ -1,5 +1,5 @@
 // Comprehensive test for JSR package with actual file processing
-import { render, init } from "jsr:@sail/docx-handlebars@0.2.5";
+import init, { render_template } from "docx-handlebars";
 
 async function comprehensiveTest() {
   try {
@@ -76,7 +76,7 @@ async function comprehensiveTest() {
             }
         };
       
-      const result = render(templateBytes, JSON.stringify(testData));
+      const result = render_template(templateBytes, JSON.stringify(testData));
       console.log('✓ Template rendered successfully, result size:', result.length, 'bytes');
       
       // Save output

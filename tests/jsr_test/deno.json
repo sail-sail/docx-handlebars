@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Test JSR package",
+  "imports": {
+    "docx-handlebars": "jsr:@sail/docx-handlebars@0.3.0"
+  },
   "scripts": {
     "test": "deno run --allow-net --allow-read test.ts"
   }

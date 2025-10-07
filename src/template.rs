@@ -11,7 +11,7 @@ use base64::{Engine as _, engine::general_purpose};
 
 const REMOVE_TABLE_ROW_KEY: &str = "d53e6de6-fb82-4ca8-95aa-2bc56b6d5791";
 
-pub fn render_handlebars(
+pub fn render_template(
   zip_bytes: Vec<u8>,
   data: &Value,
 ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
@@ -67,7 +67,6 @@ pub fn render_handlebars(
         | -> Result<(), handlebars::RenderError> {
           let src = h.param(0).and_then(|v| v.value().as_str()).unwrap_or("");
           if src.is_empty() {
-            out.write("")?;
             return Ok(());
           }
           let width_param = h.param(1).and_then(|v| v.value().as_u64());
@@ -222,13 +221,13 @@ pub fn render_handlebars(
             
             // 计算位置偏移（仅对 anchor 模式有效）
             let position_h = if let Some(h) = options_position_h {
-                h as i64 * 9525 // 用户传入像素，转换为 EMU（支持负数）
+                h * 9525 // 用户传入像素，转换为 EMU（支持负数）
             } else {
                 -((target_w as i64 / 2) * 9525) // 默认使用图片宽度一半的负值，实现居中效果
             };
             
             let position_v = if let Some(v) = options_position_v {
-                v as i64 * 9525 // 用户传入像素，转换为 EMU（支持负数）
+                v * 9525 // 用户传入像素，转换为 EMU（支持负数）
             } else {
                 -((target_h as i64 / 2) * 9525) // 默认使用图片高度一半的负值，实现居中效果
             };
@@ -347,7 +346,6 @@ pub fn render_handlebars(
           
           let src = h.param(0).and_then(|v| v.value().as_str()).unwrap_or("");
           if src.is_empty() {
-            out.write("")?;
             return Ok(());
           }
           
@@ -388,6 +386,8 @@ pub fn render_handlebars(
         REMOVE_TABLE_ROW_KEY
       });
       handlebars.register_helper("removeTableRow", Box::new(removeTableRow));
+      
+      // std::fs::write("./document0.xml", &xml_content)?;
       
       // 渲染模板
       let xml_content = handlebars.render_template(&xml_content, data)

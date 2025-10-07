@@ -1,21 +1,20 @@
 /* tslint:disable */
 /* eslint-disable */
-/**
- * 主要的 DOCX Handlebars 处理器
- */
-export function render(zip_bytes: Uint8Array, data_json: string): any;
+export function render_template(zip_bytes: Uint8Array, data_json: string): any;
+export function wasm_get_image_dimensions(data: Uint8Array): any;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly render: (a: number, b: number, c: number, d: number) => [number, number, number];
+  readonly render_template: (a: number, b: number, c: number, d: number) => [number, number, number];
+  readonly wasm_get_image_dimensions: (a: number, b: number) => any;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
-  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_start: () => void;
 }

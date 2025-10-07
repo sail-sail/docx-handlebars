@@ -28,7 +28,7 @@ pub(crate) fn validate_docx_format(file_data: &[u8]) -> Result<(), DocxError> {
     Ok(())
 }
 
-/// XML 转义符转换成正常字符
+// /// XML 转义符转换成正常字符
 // pub fn xml_escape_to_normal(xml_content: String) -> String {
 //     xml_content
 //         .replace("&lt;", "<")
@@ -94,7 +94,8 @@ pub(crate) fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box
                 // 如果不在 handlebars 表达式中且大括号已平衡，输出缓冲的文本
                 if !in_handlebars && brace_count == 0
                     && !text_buffer.is_empty() {
-                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        // writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::from_escaped(&text_buffer)))?;
                         text_buffer.clear();
                     }
                 // 否则继续累积文本，等待 handlebars 表达式完整
@@ -106,7 +107,8 @@ pub(crate) fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box
                 if !in_handlebars && brace_count == 0 {
                     // 先输出之前缓冲的文本
                     if !text_buffer.is_empty() {
-                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        // writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::from_escaped(&text_buffer)))?;
                         text_buffer.clear();
                     }
                     // 输出开始标签
@@ -121,7 +123,8 @@ pub(crate) fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box
                 if !in_handlebars && brace_count == 0 {
                     // 先输出之前缓冲的文本
                     if !text_buffer.is_empty() {
-                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        // writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::from_escaped(&text_buffer)))?;
                         text_buffer.clear();
                     }
                     // 输出结束标签
@@ -133,7 +136,8 @@ pub(crate) fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box
             Ok(Event::Empty(ref e)) => {
                 if !in_handlebars && brace_count == 0 {
                     if !text_buffer.is_empty() {
-                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        // writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::from_escaped(&text_buffer)))?;
                         text_buffer.clear();
                     }
                     writer.write_event(Event::Empty(e.clone()))?;
@@ -145,7 +149,8 @@ pub(crate) fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box
             Ok(event) => {
                 if !in_handlebars && brace_count == 0 {
                     if !text_buffer.is_empty() {
-                        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        // writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+                        writer.write_event(Event::Text(quick_xml::events::BytesText::from_escaped(&text_buffer)))?;
                         text_buffer.clear();
                     }
                     writer.write_event(event)?;
@@ -160,7 +165,8 @@ pub(crate) fn merge_handlebars_in_xml(xml_content: String) -> Result<String, Box
     
     // 输出剩余的文本缓冲（如果有的话）
     if !text_buffer.is_empty() {
-        writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+        // writer.write_event(Event::Text(quick_xml::events::BytesText::new(&text_buffer)))?;
+        writer.write_event(Event::Text(quick_xml::events::BytesText::from_escaped(&text_buffer)))?;
     }
     
     // 将结果转换为字符串返回
@@ -242,23 +248,19 @@ pub(crate) fn remove_table_row_simple(xml_content: &str, target_uuid: &str) -> R
                     current_row_content.clear();
                     current_row_content.push_str(&format!("<{}", String::from_utf8_lossy(e.name().as_ref())));
                     // 添加属性
-                    for attr in e.attributes() {
-                        if let Ok(attr) = attr {
-                            current_row_content.push_str(&format!(" {}=\"{}\"", 
-                                String::from_utf8_lossy(attr.key.as_ref()),
-                                String::from_utf8_lossy(&attr.value)));
-                        }
+                    for attr in e.attributes().flatten() {
+                        current_row_content.push_str(&format!(" {}=\"{}\"", 
+                            String::from_utf8_lossy(attr.key.as_ref()),
+                            String::from_utf8_lossy(&attr.value)));
                     }
                     current_row_content.push('>');
                 } else if in_table_row {
                     current_row_content.push_str(&format!("<{}", String::from_utf8_lossy(e.name().as_ref())));
                     // 添加属性
-                    for attr in e.attributes() {
-                        if let Ok(attr) = attr {
-                            current_row_content.push_str(&format!(" {}=\"{}\"", 
-                                String::from_utf8_lossy(attr.key.as_ref()),
-                                String::from_utf8_lossy(&attr.value)));
-                        }
+                    for attr in e.attributes().flatten() {
+                        current_row_content.push_str(&format!(" {}=\"{}\"", 
+                            String::from_utf8_lossy(attr.key.as_ref()),
+                            String::from_utf8_lossy(&attr.value)));
                     }
                     current_row_content.push('>');
                 } else {
@@ -302,12 +304,10 @@ pub(crate) fn remove_table_row_simple(xml_content: &str, target_uuid: &str) -> R
             Ok(Event::Empty(ref e)) => {
                 if in_table_row {
                     current_row_content.push_str(&format!("<{}", String::from_utf8_lossy(e.name().as_ref())));
-                    for attr in e.attributes() {
-                        if let Ok(attr) = attr {
-                            current_row_content.push_str(&format!(" {}=\"{}\"", 
-                                String::from_utf8_lossy(attr.key.as_ref()),
-                                String::from_utf8_lossy(&attr.value)));
-                        }
+                    for attr in e.attributes().flatten() {
+                        current_row_content.push_str(&format!(" {}=\"{}\"", 
+                            String::from_utf8_lossy(attr.key.as_ref()),
+                            String::from_utf8_lossy(&attr.value)));
                     }
                     current_row_content.push_str("/>");
                 } else {

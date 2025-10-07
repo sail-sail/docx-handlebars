@@ -164,7 +164,7 @@
 
     <script type="module">
         let wasmModule = null;
-        let render = null;
+        let render_template = null;
         let isWasmReady = false;
         
         function addResult(message, type = 'info') {
@@ -193,7 +193,7 @@
                 try {
                     const pkg = await import('./node_modules/docx-handlebars/docx_handlebars.js');
                     await pkg["default"](); // 初始化 WASM
-                    render = pkg.render; // 获取 render 函数
+                    render_template = pkg.render_template; // 获取 render 函数
                     wasmModule = pkg;
                     addResult('✓ 成功加载 npm 版本 (函数式 API)', 'success');
                 } catch (nodeError) {
@@ -201,14 +201,14 @@
                     throw nodeError;
                 }
                 
-                if (render && typeof render === 'function') {
+                if (render_template && typeof render_template === 'function') {
                     isWasmReady = true;
                     updateStatus('load-status', 'success');
                     document.getElementById('basic-test-btn').disabled = false;
                     document.getElementById('file-test-btn').disabled = false;
                     addResult('🎉 包加载成功！WASM 模块已就绪', 'success');
                 } else {
-                    throw new Error('render 函数未找到');
+                    throw new Error('render_template 函数未找到');
                 }
                 
             } catch (error) {
@@ -228,11 +228,11 @@
             addResult('🧪 开始基础功能测试...', 'info');
             
             try {
-                // 检查 render 函数
-                if (typeof render === 'function') {
-                    addResult('✓ render 函数可用', 'success');
+                // 检查 render_template 函数
+                if (typeof render_template === 'function') {
+                    addResult('✓ render_template 函数可用', 'success');
                 } else {
-                    throw new Error('render 函数不可用');
+                    throw new Error('render_template 函数不可用');
                 }
                 
                 // 检查其他可用的导出
@@ -286,7 +286,7 @@
                 
                 // 使用新的函数式 API 进行渲染
                 addResult('🎨 使用新的函数式 API 渲染模板...', 'info');
-                const result = render(uint8Array, testData);
+                const result = render_template(uint8Array, testData);
                 addResult(`✓ 模板渲染成功: ${result.length} 字节`, 'success');
                 
                 // 创建下载链接
@@ -327,7 +327,7 @@
         window.addEventListener('load', () => {
             addResult('🌐 浏览器环境初始化完成', 'info');
             addResult('💡 点击"开始加载测试"来测试 npm 包的浏览器兼容性', 'info');
-            addResult('🔄 现在使用新的函数式 API (render 函数)', 'info');
+            addResult('🔄 现在使用新的函数式 API (render_template 函数)', 'info');
         });
     </script>
 </body>

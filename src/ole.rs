@@ -1,7 +1,6 @@
 use std::io::{Cursor, Write};
 
 #[allow(dead_code)]
-
 /// 根据真实Word OLE文件结构创建标准的OLE复合文档对象
 pub(crate) fn create_ole_object(
     attachment_bytes: &[u8],

@@ -7,10 +7,7 @@
 // 注意：这需要先构建 WASM 包
 // 运行 `npm run build:jsr` 来构建包
 
-import {
-    render,
-    default as init,
-} from "../pkg-jsr/mod.ts";
+import init, { render_template } from "../pkg-jsr/mod.ts";
 
 import * as fs from "node:fs";
 
@@ -123,7 +120,7 @@ async function denoExample() {
         
         // 渲染模板 - 使用新的函数式 API
         console.log("\n🎨 渲染模板...");
-        const result = render(templateBytes, JSON.stringify(data));
+        const result = render_template(templateBytes, JSON.stringify(data));
         
         // 保存结果
         const outputPath = "./examples/output_deno.docx";

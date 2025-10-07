@@ -8,7 +8,7 @@ const path = require("node:path");
 async function nodeExample() {
     try {
         // 导入 WASM 模块 - 使用新的函数式 API
-        const { default: init, render } = await import('../pkg-npm/docx_handlebars.js');
+        const { default: init, render_template } = await import('../pkg-npm/docx_handlebars.js');
         
         // 指定 WASM 文件路径
         const wasmPath = path.join(__dirname, '../pkg-npm/docx_handlebars_bg.wasm');
@@ -105,7 +105,7 @@ async function nodeExample() {
         
         // 渲染模板 - 使用新的函数式 API
         console.log('\n🎨 渲染模板...');
-        const result = render(new Uint8Array(templateBuffer), JSON.stringify(data));
+        const result = render_template(new Uint8Array(templateBuffer), JSON.stringify(data));
         
         // 保存结果
         const outputPath = path.join(__dirname, 'output_node.docx');

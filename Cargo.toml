@@ -1,6 +1,6 @@
 [package]
 name = "docx-handlebars"
-version = "0.2.5"
+version = "0.3.0"
 edition = "2021"
 authors = ["sail-sail <151263555@qq.com>"]
 description = "A Rust library for processing DOCX files with Handlebars templates, supporting WASM, Node.js, Deno, and browsers"
@@ -41,22 +41,24 @@ exclude = [
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+# Core dependencies
 handlebars = "6.3.2"
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.142"
-zip = { version = "4.3.0", default-features = false, features = ["deflate"] }
-thiserror = "2.0.14"
-uuid = { version = "1.18.0", features = ["v4", "js"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+zip = { version = "5.1.1", default-features = false, features = ["deflate"] }
+thiserror = "2.0.17"
+uuid = { version = "1.18.1", features = ["v4", "js"] }
 base64 = "0.22.1"
-quick-xml = "0.38.1"
+# regex = "1.11.1"
+quick-xml = "0.38.3"
 
 # WASM dependencies
-wasm-bindgen = "0.2.100"
-js-sys = "0.3.77"
+wasm-bindgen = "0.2.104"
+js-sys = "0.3.81"
 console_error_panic_hook = { version = "0.1.7", optional = true }
 
 # Web API dependencies
-web-sys = { version = "0.3.77", features = [
+web-sys = { version = "0.3.81", features = [
   "console",
   "File",
   "FileReader",
@@ -64,17 +66,14 @@ web-sys = { version = "0.3.77", features = [
 ] }
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.50"
+wasm-bindgen-test = "0.3.54"
 
 [features]
-default = ["console_error_panic_hook"]
+default = []  # 生产环境默认不包含 panic hook
+dev = ["console_error_panic_hook"]  # 开发时才启用
 
 [profile.release]
 panic = "abort"
 opt-level = "z"
 lto = true
 codegen-units = 1
-
-# Build configuration for WASM
-[package.metadata.wasm-pack.profile.release]
-wee-alloc = false

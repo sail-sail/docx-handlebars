@@ -17,7 +17,7 @@ async function testDocumentProcessing() {
     await init(wasmBytes);
     console.log('✓ WASM module initialized synchronously');
     
-    console.log('✓ render function imported');
+    console.log('✓ render_template function imported');
     
     // Test template file path
     const templatePath = path.join(__dirname, '..', '..', 'examples', 'template.docx');
@@ -94,7 +94,7 @@ async function testDocumentProcessing() {
     
     // Render document using new functional API
     console.log('🔄 Rendering document with test data...');
-    const renderedData = render(new Uint8Array(templateData), JSON.stringify(testData));
+    const renderedData = render_template(new Uint8Array(templateData), JSON.stringify(testData));
     console.log('✓ Document rendered successfully, size:', renderedData.length, 'bytes');
     
     // Save output

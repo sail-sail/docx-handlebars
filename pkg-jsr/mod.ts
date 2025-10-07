@@ -3,24 +3,24 @@
  * 
  * @example
  * ```typescript
- * import { render, init } from "https://deno.land/x/docx_handlebars/mod.ts";
+ * import { render_template, init } from "https://deno.land/x/docx_handlebars/mod.ts";
  * 
  * // Initialize WASM module
  * await init();
  * 
  * const templateBytes = await Deno.readFile("template.docx");
  * const data = { name: "张三", company: "ABC公司" };
- * const result = render(templateBytes, JSON.stringify(data));
+ * const result = render_template(templateBytes, JSON.stringify(data));
  * 
  * await Deno.writeFile("output.docx", new Uint8Array(result));
  * ```
  */
 
 // Import the WASM module and its functions
-import init, { render } from "./docx_handlebars.js";
+import init, { render_template } from "./docx_handlebars.js";
 
 // Re-export the main functions
-export { render, init };
+export { render_template, init };
 export default init;
 
 /**

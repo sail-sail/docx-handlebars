@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/docx-handlebars/badge.svg)](https://docs.rs/docx-handlebars)
 [![License](https://img.shields.io/crates/l/docx-handlebars.svg)](https://github.com/sail-sail/docx-handlebars#license)
 
-[中文文档](README_zh.md) | English
+[中文文档](README_CN.md) | English | [Demo](https://sail-sail.github.io/docx-handlebars-demo/) 
 
 A Rust library for processing DOCX files with Handlebars templates, supporting multiple platforms:
 - 🦀 Rust native
@@ -42,7 +42,7 @@ npm install docx-handlebars
 ### Deno
 
 ```typescript
-import { render, init } from "jsr:@sail/docx-handlebars";
+import { render_template, init } from "jsr:@sail/docx-handlebars";
 ```
 
 ## Usage Examples
@@ -50,7 +50,7 @@ import { render, init } from "jsr:@sail/docx-handlebars";
 ### Rust
 
 ```rust
-use docx_handlebars::render_handlebars;
+use docx_handlebars::render_template;
 use serde_json::json;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -71,7 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     
     // Render template
-    let result = render_handlebars(template_bytes, &data)?;
+    let result = render_template(template_bytes, &data)?;
     
     // Save result
     std::fs::write("output.docx", result)?;
@@ -83,7 +83,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### JavaScript/TypeScript (Node.js)
 
 ```javascript
-import { render, init } from 'docx-handlebars';
+import { render_template, init } from 'docx-handlebars';
 import fs from 'fs';
 
 async function processTemplate() {
@@ -107,7 +107,7 @@ async function processTemplate() {
     };
     
     // Render template
-    const result = render(templateBytes, JSON.stringify(data));
+    const result = render_template(templateBytes, JSON.stringify(data));
     
     // Save result
     fs.writeFileSync('output.docx', new Uint8Array(result));
@@ -119,7 +119,7 @@ processTemplate().catch(console.error);
 ### Deno
 
 ```typescript
-import { render, init } from "https://deno.land/x/docx_handlebars/mod.ts";
+import { render_template, init } from "https://deno.land/x/docx_handlebars/mod.ts";
 
 async function processTemplate() {
     // Initialize WASM module
@@ -139,7 +139,7 @@ async function processTemplate() {
     };
     
     // Render template
-    const result = render(templateBytes, JSON.stringify(data));
+    const result = render_template(templateBytes, JSON.stringify(data));
     
     // Save result
     await Deno.writeFile("output.docx", new Uint8Array(result));
@@ -163,7 +163,7 @@ if (import.meta.main) {
     <button onclick="processFile()">Process Template</button>
     
     <script type="module">
-        import { render, init } from './pkg/docx_handlebars.js';
+        import { render_template, init } from './pkg/docx_handlebars.js';
         
         // Initialize WASM
         await init();
@@ -183,7 +183,7 @@ if (import.meta.main) {
             };
             
             try {
-                const result = render(templateBytes, JSON.stringify(data));
+                const result = render_template(templateBytes, JSON.stringify(data));
                 
                 // Download result
                 const blob = new Blob([new Uint8Array(result)], {
@@ -325,42 +325,6 @@ Image:
   - Supports negative offsets for precise image positioning
 ```
 
-## Error Handling
-
-The library provides detailed error types and messages:
-
-### Rust
-
-```rust
-use docx_handlebars::{render_handlebars, DocxError};
-
-match render_handlebars(template_bytes, &data) {
-    Ok(result) => {
-        println!("Processing successful!");
-        std::fs::write("output.docx", result)?;
-    }
-    Err(e) => match e.downcast_ref::<DocxError>() {
-        Some(DocxError::InvalidZipFormat) => {
-            eprintln!("Error: File is not a valid ZIP/DOCX format");
-        }
-        _ => {
-            eprintln!("Other error: {}", e);
-        }
-    }
-}
-```
-
-### JavaScript/TypeScript
-
-```javascript
-try {
-    const result = render(templateBytes, JSON.stringify(data));
-    console.log('Processing successful!');
-} catch (error) {
-    console.error('Processing failed:', error);
-}
-```
-
 ## Build and Development
 
 ### Build WASM Packages
@@ -400,17 +364,6 @@ node serve.js
 
 The core innovation of this library is the intelligent merging of Handlebars syntax that has been split by XML tags. In DOCX files, when users input template syntax, Word may split it into multiple XML tags.
 
-### File Validation
-
-Built-in DOCX file validation ensures input file integrity:
-
-1. **ZIP Format Validation**: Check file signature and structure
-2. **DOCX Structure Validation**: Ensure required files are present
-   - `[Content_Types].xml`
-   - `_rels/.rels` 
-   - `word/document.xml`
-3. **MIME Type Validation**: Verify correct content types
-
 ## Performance and Compatibility
 
 - **Zero Copy**: Efficient memory management between Rust and WASM
@@ -442,3 +395,8 @@ This project is licensed under the MIT License - see the [LICENSE-MIT](LICENSE-M
     <a href="https://github.com/sail-sail/docx-handlebars/discussions">💬 Join discussions</a>
   </p>
 </div>
+
+
+## Support this project with a donation via Alipay:
+![Support this project with a donation](https://www.ejsexcel.com/alipay.jpg)
+

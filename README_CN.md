@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/docx-handlebars/badge.svg)](https://docs.rs/docx-handlebars)
 [![License](https://img.shields.io/crates/l/docx-handlebars.svg)](https://github.com/sail-sail/docx-handlebars#license)
 
-中文文档 | [English](README.md)
+中文文档 | [English](README.md) | [Demo](https://sail-sail.github.io/docx-handlebars-demo/) 
 
 一个用于处理 DOCX 文件 Handlebars 模板的 Rust 库，支持多平台使用：
 - 🦀 Rust 原生
@@ -42,7 +42,7 @@ npm install docx-handlebars
 ### Deno
 
 ```typescript
-import { render, init } from "jsr:@sail/docx-handlebars";
+import { render_template, init } from "jsr:@sail/docx-handlebars";
 ```
 
 ## 使用示例
@@ -50,7 +50,7 @@ import { render, init } from "jsr:@sail/docx-handlebars";
 ### Rust
 
 ```rust
-use docx_handlebars::render_handlebars;
+use docx_handlebars::render_template;
 use serde_json::json;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -71,7 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     
     // 渲染模板
-    let result = render_handlebars(template_bytes, &data)?;
+    let result = render_template(template_bytes, &data)?;
     
     // 保存结果
     std::fs::write("output.docx", result)?;
@@ -83,7 +83,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### JavaScript/TypeScript (Node.js)
 
 ```javascript
-import { render, init } from 'docx-handlebars';
+import { render_template, init } from 'docx-handlebars';
 import fs from 'fs';
 
 async function processTemplate() {
@@ -107,7 +107,7 @@ async function processTemplate() {
     };
     
     // 渲染模板
-    const result = render(templateBytes, JSON.stringify(data));
+    const result = render_template(templateBytes, JSON.stringify(data));
     
     // 保存结果
     fs.writeFileSync('output.docx', new Uint8Array(result));
@@ -119,7 +119,7 @@ processTemplate().catch(console.error);
 ### Deno
 
 ```typescript
-import { render, init } from "https://deno.land/x/docx_handlebars/mod.ts";
+import { render_template, init } from "https://deno.land/x/docx_handlebars/mod.ts";
 
 async function processTemplate() {
     // 初始化 WASM 模块
@@ -139,7 +139,7 @@ async function processTemplate() {
     };
     
     // 渲染模板
-    const result = render(templateBytes, JSON.stringify(data));
+    const result = render_template(templateBytes, JSON.stringify(data));
     
     // 保存结果
     await Deno.writeFile("output.docx", new Uint8Array(result));
@@ -163,7 +163,7 @@ if (import.meta.main) {
     <button onclick="processFile()">处理模板</button>
     
     <script type="module">
-        import { render, init } from './pkg/docx_handlebars.js';
+        import { render_template, init } from './pkg/docx_handlebars.js';
         
         // 初始化 WASM
         await init();
@@ -183,7 +183,7 @@ if (import.meta.main) {
             };
             
             try {
-                const result = render(templateBytes, JSON.stringify(data));
+                const result = render_template(templateBytes, JSON.stringify(data));
                 
                 // 下载结果
                 const blob = new Blob([new Uint8Array(result)], {
@@ -326,42 +326,6 @@ if (import.meta.main) {
   - 支持负数偏移，实现精确的图片定位
 ```
 
-## 错误处理
-
-库提供了详细的错误类型和消息：
-
-### Rust
-
-```rust
-use docx_handlebars::{render_handlebars, DocxError};
-
-match render_handlebars(template_bytes, &data) {
-    Ok(result) => {
-        println!("处理成功！");
-        std::fs::write("output.docx", result)?;
-    }
-    Err(e) => match e.downcast_ref::<DocxError>() {
-        Some(DocxError::InvalidZipFormat) => {
-            eprintln!("错误: 无效的 DOCX 文件格式");
-        }
-        _ => {
-            eprintln!("其他错误: {}", e);
-        }
-    }
-}
-```
-
-### JavaScript/TypeScript
-
-```javascript
-try {
-    const result = render(templateBytes, JSON.stringify(data));
-    console.log('处理成功！');
-} catch (error) {
-    console.error('处理失败:', error);
-}
-```
-
 ## 构建和开发
 
 ### 构建 WASM 包
@@ -394,23 +358,6 @@ node serve.js
 # 然后在浏览器中打开 http://localhost:8080
 # 选择 examples/template.docx 文件测试
 ```
-
-## 技术特性
-
-### 智能合并算法
-
-该库的核心创新是智能合并被 XML 标签分割的 Handlebars 语法。在 DOCX 文件中，当用户输入模板语法时，Word 可能会将其拆分成多个 XML 标签
-
-### 文件验证
-
-内置的 DOCX 文件验证确保输入文件的完整性：
-
-1. **ZIP 格式验证**：检查文件签名和结构
-2. **DOCX 结构验证**：确保包含必要的文件
-   - `[Content_Types].xml`
-   - `_rels/.rels` 
-   - `word/document.xml`
-3. **MIME 类型验证**：验证内容类型正确性
 
 ## 性能和兼容性
 
@@ -446,4 +393,4 @@ node serve.js
 
 
 ## 捐赠鼓励支持此项目,支付宝扫码:
-![捐赠鼓励支持此项目](https://ejsexcel.com/alipay.jpg)
+![捐赠鼓励支持此项目](https://www.ejsexcel.com/alipay.jpg)
