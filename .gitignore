@@ -19,8 +19,8 @@ yarn-error.log*
 Thumbs.db
 
 # Test files
-test_*.docx
-output_*.docx
+examples/test_*.*
+examples/output_*.*
 
 # Logs
 *.log

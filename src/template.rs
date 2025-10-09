@@ -40,6 +40,41 @@ pub fn render_template(
     files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?.insert(file_name, contents);
   }
   
+  // 创建共享的 Handlebars 实例
+  let mut handlebars = Handlebars::new();
+  handlebars.set_strict_mode(false); // 允许未定义的变量
+  register_basic_helpers(&mut handlebars)?;
+  
+  // 处理页眉文件 (word/header*.xml)
+  {
+    let file_names: Vec<String> = {
+      let files_lock = files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?;
+      files_lock.keys()
+        .filter(|name| name.starts_with("word/header") && name.ends_with(".xml"))
+        .cloned()
+        .collect()
+    };
+    
+    for file_name in file_names {
+      let contents = files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?.remove(&file_name);
+      if let Some(contents) = contents {
+        let xml_content = String::from_utf8(contents)?;
+        let xml_content = merge_handlebars_in_xml(xml_content)?;
+        
+        // 渲染模板
+        let xml_content = handlebars.render_template(&xml_content, data)
+          .map_err(|e| {
+            let reason: &RenderErrorReason = e.reason();
+            DocxError::TemplateRenderError(format!("{}: {}", file_name, reason.to_string()))
+          })?;
+        
+        let xml_content = fix_drawing_with_placeholders(xml_content)?;
+        
+        files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?.insert(file_name, xml_content.into_bytes());
+      }
+    }
+  }
+  
   // 处理 document.xml 文件
   {
     let file_name = "word/document.xml";
@@ -48,12 +83,6 @@ pub fn render_template(
       let xml_content = String::from_utf8(contents.clone())?;
       
       let xml_content = merge_handlebars_in_xml(xml_content)?;
-  
-      let mut handlebars = Handlebars::new();
-      
-      handlebars.set_strict_mode(false); // 允许未定义的变量
-      
-      register_basic_helpers(&mut handlebars)?;
       
       let files_ref = Arc::clone(&files);
       // 注册 img helper
@@ -403,6 +432,39 @@ pub fn render_template(
       files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?.insert(file_name.to_string(), xml_content.into_bytes());
     }
   }
+  
+  // 处理页脚文件 (word/footer*.xml)
+  {
+    let file_names: Vec<String> = {
+      let files_lock = files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?;
+      files_lock.keys()
+        .filter(|name| name.starts_with("word/footer") && name.ends_with(".xml"))
+        .cloned()
+        .collect()
+    };
+    
+    for file_name in file_names {
+      let contents = files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?.remove(&file_name);
+      if let Some(contents) = contents {
+        let xml_content = String::from_utf8(contents)?;
+        let xml_content = merge_handlebars_in_xml(xml_content)?;
+        
+        // 渲染模板
+        let xml_content = handlebars.render_template(&xml_content, data)
+          .map_err(|e| {
+            let reason: &RenderErrorReason = e.reason();
+            DocxError::TemplateRenderError(format!("{}: {}", file_name, reason.to_string()))
+          })?;
+        
+        let xml_content = fix_drawing_with_placeholders(xml_content)?;
+        
+        files.lock().map_err(|e| Box::new(std::io::Error::other(format!("Failed to lock files: {e}"))))?.insert(file_name, xml_content.into_bytes());
+      }
+    }
+  }
+  
+  // 释放 handlebars 实例，这样闭包中持有的 Arc 引用就会被释放
+  drop(handlebars);
   
   // Extract files from Arc<Mutex<_>>
   let files = Arc::try_unwrap(files).map_err(|_| Box::new(std::io::Error::other("Failed to unwrap Arc")))?.into_inner().map_err(|e| Box::new(std::io::Error::other(format!("Failed to get inner value: {e:?}"))))?;
