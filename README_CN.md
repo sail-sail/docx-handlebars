@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/docx-handlebars/badge.svg)](https://docs.rs/docx-handlebars)
 [![License](https://img.shields.io/crates/l/docx-handlebars.svg)](https://github.com/sail-sail/docx-handlebars#license)
 
-中文文档 | [English](README.md) | [Demo](https://sail-sail.github.io/docx-handlebars-demo/) 
+中文文档 | [English](README.md) | [在线演示](https://sail-sail.github.io/docx-handlebars-demo/) 
 
 一个用于处理 DOCX 文件 Handlebars 模板的 Rust 库，支持多平台使用：
 - 🦀 Rust 原生
@@ -23,7 +23,6 @@
 - ✅ **跨平台**：Rust 原生 + WASM 支持多种运行时
 - ✅ **TypeScript**：完整的类型定义和智能提示
 - ✅ **零依赖**：WASM 二进制文件，无外部依赖
-- ✅ **错误处理**：详细的错误信息和类型安全的错误处理
 
 ## 安装
 

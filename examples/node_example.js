@@ -2,134 +2,122 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-// 注意：这个示例需要 WASM 包构建完成后才能运行
-// 运行 `npm run build:npm` 来构建 npm 包
+// Note: This example requires the WASM package to be built first
+// Run `npm run build:npm` to build the npm package
 
 async function nodeExample() {
     try {
-        // 导入 WASM 模块 - 使用新的函数式 API
+        // Import WASM module - using new functional API
         const { default: init, render_template } = await import('../pkg-npm/docx_handlebars.js');
         
-        // 指定 WASM 文件路径
+        // Specify WASM file path
         const wasmPath = path.join(__dirname, '../pkg-npm/docx_handlebars_bg.wasm');
         const wasmBuffer = fs.readFileSync(wasmPath);
         await init(wasmBuffer);
         
-        console.log('🚀 Node.js DOCX Handlebars 处理示例\n');
+        console.log('🚀 Node.js XLSX Handlebars Processing Example\n');
         
-        // 示例：假设您有一个模板文件
+        // Example: Assume you have a template file
         const templatePath = path.join(__dirname, 'template.docx');
         
-        // 检查模板文件是否存在
+        // Check if template file exists
         if (!fs.existsSync(templatePath)) {
-            console.log('⚠️  模板文件不存在，创建示例说明...\n');
+            console.log('⚠️  Template file does not exist, creating example description...\n');
             return;
         }
         
-        // 读取模板文件
-        console.log('📖 读取模板文件...');
+        // Read template file
+        console.log('📖 Reading template file...');
         const templateBuffer = fs.readFileSync(templatePath);
         
-        console.log('⚙️  准备处理模板...');
+        console.log('⚙️  Preparing to process template...');
         
         const imageBase64 = fs.readFileSync(__dirname + '/image.webp').toString('base64');
         const image_anchor = fs.readFileSync(__dirname + '/label_adopt.png').toString('base64');
         
-        // 准备数据
+        // Prepare data
         const data = {
-            "employee": {
-                "name": "陈小华",
-                "department": "产品部",
-                "position": "产品经理",
-                "hire_date": "2024-02-20",
-                "has_bonus": true,
-                "bonus_amount": 12000,
-                "email": "chenxiaohua@company.com"
+            employee: {
+                name: "John Smith",
+                department: "Product",
+                position: "Product Manager",
+                hire_date: "2024-02-20",
+                has_bonus: true,
+                bonus_amount: 12000,
+                email: "john.smith@company.com"
             },
-            "company": {
-                "name": "创新科技有限公司",
-                "address": "上海市浦东新区张江高科技园区",
-                "industry": "人工智能"
+            company: {
+                name: "Innovative Tech Ltd.",
+                address: "123 Tech Park, Silicon Valley, CA",
+                industry: "Artificial Intelligence"
             },
-            "projects": [
+            projects: [
                 {
-                    "name": "AI助手平台",
-                    "description": "智能对话系统产品设计",
-                    "status": "已上线",
-                    "duration": "3个月",
-                    "team_size": 8
+                    name: "AI Assistant Platform",
+                    description: "Intelligent dialogue system product design",
+                    status: "Launched",
+                    duration: "3 months",
+                    team_size: 8
                 },
                 {
-                    "name": "数据分析工具",
-                    "description": "用户行为分析平台",
-                    "status": "开发中",
-                    "duration": "2个月",
-                    "team_size": 5
+                    name: "Data Analysis Tool",
+                    description: "User behavior analysis platform",
+                    status: "In Development",
+                    duration: "2 months",
+                    team_size: 5
                 },
                 {
-                    "name": "移动应用重构",
-                    "description": "用户体验优化项目",
-                    "status": "规划中",
-                    "duration": "4个月",
-                    "team_size": 12
+                    name: "Mobile App Refactoring",
+                    description: "User experience optimization project",
+                    status: "Planning",
+                    duration: "4 months",
+                    team_size: 12
                 }
             ],
-            "skills": ["产品设计", "用户研究", "数据分析", "项目管理", "敏捷开发"],
-            "achievements": [
-                "产品用户量增长200%",
-                "用户满意度提升至4.8/5.0",
-                "获得年度最佳产品奖",
-                "主导3次成功的产品迭代"
+            skills: ["Product Design", "User Research", "Data Analysis", "Project Management", "Agile Development"],
+            achievements: [
+                "Increased product user base by 200%",
+                "Improved user satisfaction to 4.8/5.0",
+                "Won Product of the Year Award",
+                "Led 3 successful product iterations"
             ],
-            "performance": {
-                "rating": "优秀",
-                "score": 92,
-                "goals_achieved": 8,
-                "total_goals": 10
+            performance: {
+                rating: "Excellent",
+                score: 92,
+                goals_achieved: 8,
+                total_goals: 10
             },
-            "metadata": {
-                "report_date": "2025/6/26",
-                "quarter": "2024 Q1",
-                "version": "v1.0"
+            metadata: {
+                report_date: new Date().toLocaleDateString("en-US"),
+                quarter: "2024 Q1",
+                version: "v1.0"
             },
-            "image": {
-                "base64": imageBase64, // 图片的 Base64 编码
-                "image_anchor": image_anchor, // 锚点图片的 Base64 编码
+            image: {
+                "base64": imageBase64, // Base64 encoded image
+                "image_anchor": image_anchor, // Anchor Base64 encoded image
                 "options": {
-                    "anchor": true, // 是否使用锚点定位
-                    "position_h": 40, // 水平偏移，单位为像素（负值表示向左偏移）
-                    "position_v": -14 // 垂直偏移，单位为像素（负值表示向上偏移）
+                    "anchor": true, // Whether to use anchor point positioning
+                    "position_h": 40, // Horizontal offset, in pixels (negative values indicate leftward offset)
+                    "position_v": -14 // Vertical offset, in pixels (negative values indicate upward offset)
                 }
             },
         };
         
-        // 渲染模板 - 使用新的函数式 API
-        console.log('\n🎨 渲染模板...');
+        // Render template - using new functional API
+        console.log('\n🎨 Rendering template...');
         const result = render_template(new Uint8Array(templateBuffer), JSON.stringify(data));
         
-        // 保存结果
+        // Save result
         const outputPath = path.join(__dirname, 'output_node.docx');
         fs.writeFileSync(outputPath, new Uint8Array(result));
         
-        console.log(`✅ 处理完成！结果已保存到: ${outputPath}`);
+        console.log(`✅ Processing complete! Result saved to: ${outputPath}`);
         
-        console.log('\n🎉 示例执行完成！');
-        console.log('\n💡 提示: 新的函数式 API 更简洁，直接传入文件字节和数据即可！');
+        console.log('\n🎉 Example completed successfully!');
+        console.log('\n💡 Tip: The new functional API is simpler - just pass file bytes and data directly!');
         
     } catch (error) {
-        console.error('❌ 错误:', error.message || error);
-        
-        // 处理不同类型的错误
-        if (error.message && error.message.includes('Cannot resolve module')) {
-            console.log('\n💡 提示: 请先构建 Node.js 版本的 WASM 包:');
-            console.log('   npm run build:npm');
-        } else if (error.message && error.message.includes('文件大小不足')) {
-            console.log('\n💡 提示: 上传的文件太小，不是有效的 DOCX 文件');
-        } else if (error.message && error.message.includes('无效的 ZIP 签名')) {
-            console.log('\n💡 提示: 文件不是有效的 ZIP/DOCX 格式');
-        } else if (error.message && error.message.includes('缺少必需的 DOCX 文件')) {
-            console.log('\n💡 提示: 文件不包含必需的 DOCX 组件');
-        }
+        console.error('❌ Error:', error.message || error);
     }
 }
 

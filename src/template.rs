@@ -65,7 +65,7 @@ pub fn render_template(
         let xml_content = handlebars.render_template(&xml_content, data)
           .map_err(|e| {
             let reason: &RenderErrorReason = e.reason();
-            DocxError::TemplateRenderError(format!("{}: {}", file_name, reason.to_string()))
+            DocxError::TemplateRenderError(format!("{}: {}", file_name, reason))
           })?;
         
         let xml_content = fix_drawing_with_placeholders(xml_content)?;
@@ -453,7 +453,7 @@ pub fn render_template(
         let xml_content = handlebars.render_template(&xml_content, data)
           .map_err(|e| {
             let reason: &RenderErrorReason = e.reason();
-            DocxError::TemplateRenderError(format!("{}: {}", file_name, reason.to_string()))
+            DocxError::TemplateRenderError(format!("{}: {}", file_name, reason))
           })?;
         
         let xml_content = fix_drawing_with_placeholders(xml_content)?;

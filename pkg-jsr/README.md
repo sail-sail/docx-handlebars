@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/docx-handlebars/badge.svg)](https://docs.rs/docx-handlebars)
 [![License](https://img.shields.io/crates/l/docx-handlebars.svg)](https://github.com/sail-sail/docx-handlebars#license)
 
-[中文文档](README_CN.md) | English | [Demo](https://sail-sail.github.io/docx-handlebars-demo/) 
+ English | [中文文档](README_CN.md) |[Demo](https://sail-sail.github.io/docx-handlebars-demo/) 
 
 A Rust library for processing DOCX files with Handlebars templates, supporting multiple platforms:
 - 🦀 Rust native
@@ -23,7 +23,6 @@ A Rust library for processing DOCX files with Handlebars templates, supporting m
 - ✅ **Cross-platform**: Rust native + WASM support for multiple runtimes
 - ✅ **TypeScript**: Complete type definitions and intelligent code completion
 - ✅ **Zero Dependencies**: WASM binary with no external dependencies
-- ✅ **Error Handling**: Detailed error messages and type-safe error handling
 
 ## Installation
 
@@ -42,7 +41,7 @@ npm install docx-handlebars
 ### Deno
 
 ```typescript
-import { render_template, init } from "jsr:@sail/docx-handlebars";
+import init, { render_template } from "jsr:@sail/docx-handlebars";
 ```
 
 ## Usage Examples
@@ -83,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ### JavaScript/TypeScript (Node.js)
 
 ```javascript
-import { render_template, init } from 'docx-handlebars';
+import init, { render_template } from 'docx-handlebars';
 import fs from 'fs';
 
 async function processTemplate() {
@@ -119,7 +118,7 @@ processTemplate().catch(console.error);
 ### Deno
 
 ```typescript
-import { render_template, init } from "https://deno.land/x/docx_handlebars/mod.ts";
+import init, { render_template } from "https://deno.land/x/docx_handlebars/mod.ts";
 
 async function processTemplate() {
     // Initialize WASM module
@@ -163,7 +162,7 @@ if (import.meta.main) {
     <button onclick="processFile()">Process Template</button>
     
     <script type="module">
-        import { render_template, init } from './pkg/docx_handlebars.js';
+        import init, { render_template } from './pkg/docx_handlebars.js';
         
         // Initialize WASM
         await init();

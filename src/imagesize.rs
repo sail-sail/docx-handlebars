@@ -149,7 +149,7 @@ fn get_gif_dimensions(data: &[u8]) -> Option<(u32, u32)> {
 
 // 获取图片的宽高
 /// 支持 PNG, JPEG, WebP, BMP, TIFF, GIF 格式
-pub fn get_image_dimensions(data: &[u8]) -> Option<(u32, u32)> {
+pub(crate) fn get_image_dimensions(data: &[u8]) -> Option<(u32, u32)> {
     if let Some((w, h)) = get_png_dimensions(data) {
         Some((w, h))
     } else if let Some((w, h)) = get_jpeg_dimensions(data).map(|(w, h)| (w as u32, h as u32)) {
