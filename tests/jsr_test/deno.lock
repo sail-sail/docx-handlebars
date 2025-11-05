@@ -1,16 +1,16 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@sail/docx-handlebars@0.3.2": "0.3.2"
+    "jsr:@sail/docx-handlebars@0.3.3": "0.3.3"
   },
   "jsr": {
-    "@sail/docx-handlebars@0.3.2": {
-      "integrity": "bf25fc703da31679236f8213976399a451269dc037291a8b03b2d1e2b74c3892"
+    "@sail/docx-handlebars@0.3.3": {
+      "integrity": "cbb885eeca9d451bbec0870af67cd5a03f693031c6ed7403078f362ebdd83e1e"
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@sail/docx-handlebars@0.3.2"
+      "jsr:@sail/docx-handlebars@0.3.3"
     ]
   }
 }
