@@ -179,6 +179,53 @@ pub(crate) fn register_basic_helpers(handlebars: &mut handlebars::Handlebars) ->
     use handlebars::handlebars_helper;
     use serde_json::Value;
     
+    // register the helper
+    handlebars_helper!(hex: |v: i64| format!("0x{:x}", v));
+    handlebars.register_helper("hex", Box::new(hex));
+
+    // handlebars_helper!(format: |format:String, data:String| {let f = format!("{}", format); format!(f, data)});
+    // /// register the helper
+    // handlebars.register_helper("format", Box::new(format));
+
+    // handlebars_helper!(date_format: |format:String, date:DateTime| format!(format, date));
+    // handlebars.register_helper("date_format", Box::new(date_format));
+
+    // 加法
+    handlebars_helper!(add: |x:Value, y:Value| x.as_f64().unwrap_or_default() + y.as_f64().unwrap_or_default());
+    handlebars.register_helper("add", Box::new(add));
+
+    // 减法
+    handlebars_helper!(sub: |x:Value, y:Value| x.as_f64().unwrap_or_default() - y.as_f64().unwrap_or_default());
+    handlebars.register_helper("sub", Box::new(sub));
+
+    // 乘法
+    handlebars_helper!(mul: |x:Value, y:Value| x.as_f64().unwrap_or_default() * y.as_f64().unwrap_or_default());
+    handlebars.register_helper("mul", Box::new(mul));
+
+    // 除法
+    handlebars_helper!(div: |x:Value, y:Value| x.as_f64().unwrap_or_default() / y.as_f64().unwrap_or_default());
+    handlebars.register_helper("div", Box::new(div));
+
+    // 模运算
+    handlebars_helper!(md: |x:Value, y:Value| x.as_f64().unwrap_or_default() % y.as_f64().unwrap_or_default());
+    handlebars.register_helper("md", Box::new(md));
+
+    // 注册 and helper (与逻辑)
+    handlebars_helper!(and: |x:Value, y:Value| x.as_bool().unwrap_or_default() & y.as_bool().unwrap_or_default());
+    handlebars.register_helper("and", Box::new(and));
+
+    // 注册 or helper (或逻辑)
+    handlebars_helper!(or: |x:Value, y:Value| x.as_bool().unwrap_or_default() | y.as_bool().unwrap_or_default());
+    handlebars.register_helper("or", Box::new(or));
+
+    // 注册 not helper (非逻辑)
+    handlebars_helper!(not: |x:Value| !x.as_bool().unwrap_or_default());
+    handlebars.register_helper("not", Box::new(not));
+
+    // 注册 xor helper (异或逻辑)
+    handlebars_helper!(xor: |x:Value, y:Value| x.as_bool().unwrap_or_default() ^ y.as_bool().unwrap_or_default());
+    handlebars.register_helper("xor", Box::new(xor));
+    
     // 注册 eq helper (相等比较)
     handlebars_helper!(eq: |x: Value, y: Value| x == y);
     handlebars.register_helper("eq", Box::new(eq));
